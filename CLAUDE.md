@@ -1,126 +1,169 @@
-# Ocean Safety — VSL Funnel Landing
+# Luisa Pita Bejarano — Comunidad Anual (Preventa VIP)
 
 ## Proyecto
-Este repositorio es la landing page / funnel de **Ocean Safety** (oceansafety.ec).
-Representantes oficiales Honda Marine en Ecuador — motores fuera de borda para flotas camaroneras, transporte y seguridad.
-Es un **funnel de una sola página** (VSL Funnel) orientado a captación de consultas técnicas.
+
+Landing oficial de la **preventa cerrada de la comunidad anual** de Luisa Pita Bejarano (luisapitabejarano.com).
+
+- **Modelo de negocio**: comunidad fitness anual con Luisa. Año entero, no programas cortos.
+- **Audiencia**: mujeres ocupadas / dueñas de negocio, decididas a invertir en sí mismas.
+- **Filtro de calificación**: capital tres cifras (USD) disponible **+** compromiso de un año entero.
+- **Estado del precio**: TBD. Solo se captan leads VIP. Quien califica recibe aviso 24h antes de la apertura y un código de descuento exclusivo.
+- **Objetivo medible**: maximizar leads calificados con tracking dual (Meta Pixel cliente + Conversions API server-side).
 
 ## Stack
-- **Vue 3** + Vite 7 + TypeScript
-- **SCSS** con variables en `src/styles/colorVariables.module.scss`
-- **GSAP** instalado (sin uso activo — loader global eliminado)
-- **pnpm** como package manager
-- **vue-router** (rutas del funnel + legales)
-- **FontAwesome 6** (CDN en index.html) — usar `<i class="fa-solid fa-...">`, NO emojis
 
-## Flujo del Funnel (multi-paso)
+- **Vue 3** + Vite 7 + TypeScript
+- **SCSS** scoped por componente; paleta verde/negro/blanco hardcoded en views nuevas
+- **vue-router** (rutas del funnel + legales)
+- **Pinia** (store opcional `useContactStore`)
+- **pnpm** como package manager
+- **FontAwesome 6** (CDN en `index.html`) — usar `<i class="fa-solid fa-...">`, NO emojis
+- **Cloudflare Workers** para servir SPA + endpoint `/api/capi`
+
+## Flujo del Funnel
+
 ```
-/ (FunnelView)
-  ↓ [form submit → router.push('/ver-video')]
-/ver-video (VideoView)            ← VSL Wistia; CTA bloqueado 2 min; guard de contacto
-  ↓ [popup CalendarModal → cualifica]
-/agendar (BookingView)            ← GHL calendar iframe (pre-llenado con datos del contacto)
-  ↓ [msgsndr-booking-complete]
-/cita-confirmada (BookedView)     ← Confirmación final con nombre personalizado
-  ↓ [no cualifica en CalendarModal]
-/sin-espacio (NoSpaceView)        ← Rechazo empático + teaser del curso
+/                         FunnelView — landing comunidad preventa
+  ↓ click "Quiero mi cupo VIP" (cualquier CTA)
+[RegistrationModal]       nombre, apellido, email, teléfono, país
+  ↓ submit → trackLead() (Pixel + CAPI mismo event_id) + webhook GHL registro
+[QualifyModal]            2 preguntas:
+                          1. ¿Capital tres cifras disponible?
+                          2. ¿Lista para 1 año entero?
+  ↓ ambas "sí"
+/registrada               VIPConfirmedView — saludo personalizado + próximos pasos
+                          dispara trackCompleteRegistration()
+  ↓ alguna "no"
+/sin-cupo                 NoSpaceView — rechazo empático + IG @luisapitabejarano
+                          + cooldown 24h via lpb_disq_at
 ```
+
+## Vistas activas y rutas
+
+| Ruta | View | Notas |
+|---|---|---|
+| `/` | `FunnelView.vue` | Página principal — captura comunidad preventa |
+| `/registrada` | `VIPConfirmedView.vue` | Confirmación VIP |
+| `/sin-cupo` | `NoSpaceView.vue` | Rechazo + IG |
+| `/politicas-privacidad` | `PrivacyPolicyView.vue` | Marca placeholders `[PENDIENTE: ...]` para datos legales reales |
+| `/aviso-legal` | `LegalNoticeView.vue` | Idem |
+| `/ver-video`, `/agendar`, `/cita-confirmada`, `/sin-espacio`, `/registro-vsl-tr` | redirect | Compatibilidad con rutas viejas |
 
 ## LocalStorage — claves en uso
+
 | Clave | Contenido | Quién lo escribe |
 |---|---|---|
-| `os_contact` | `{ nombre, email, phone, timestamp }` | RegistrationModal + VideoView guard |
-| `os_disq_at` | timestamp (ms) | CalendarModal al disqualificar |
-| `os_booked_at` | timestamp (ms) | BookingView al confirmar cita |
+| `lpb_contact` | `{ nombre, apellido, email, phone, country, timestamp }` | RegistrationModal |
+| `lpb_disq_at` | timestamp ms | QualifyModal al desclasificar |
 
-## Guards de seguridad
-- **FunnelView**: si `os_disq_at` < 24h → redirige a `/sin-espacio` (desactivado en `localhost`)
-- **VideoView**: si no hay `os_contact` → overlay bloqueante para capturar contacto (desactivado en `localhost`)
-- **CalendarModal**: `sector = otro` OR `embarcaciones = 1-2` → `/sin-espacio` + guarda `os_disq_at`
+## Tracking — Meta Pixel + Conversions API
 
-## GHL Calendar
-- URL: `https://api.leadconnectorhq.com/widget/booking/dtpY2GCQjoOkpm8JUtYz` ← **TODO: actualizar para Ocean Safety**
-- Pre-fill params: `?firstName=...&email=...&phone=...` (leídos de `os_contact`)
-- Evento de confirmación: `postMessage(['msgsndr-booking-complete', {...}])`
-- Altura dinámica: `postMessage({ type: 'booking-app', height: N })`
+- Pixel cliente inicializado en `index.html` con ID `1637338760901793`.
+- Util cliente: `src/utils/tracking.ts` exporta `trackPageView`, `trackLead`, `trackCompleteRegistration`, `trackViewContent`. Cada llamada genera un `event_id` (UUID) y dispara en paralelo:
+  - `fbq('track', name, custom, { eventID })` cliente
+  - `fetch('/api/capi', { event_name, event_id, user_data, custom_data, ... })` server-side
+- Worker en `worker/index.ts` rutea `/api/capi` → `worker/capi.ts` que:
+  - Hashea `email`, `phone`, nombres, país, `external_id` con SHA-256 (Web Crypto).
+  - Inyecta `client_ip_address` (CF-Connecting-IP) y `client_user_agent`.
+  - Llama `https://graph.facebook.com/v21.0/{PIXEL_ID}/events?access_token=...`.
+- Config Worker en `wrangler.toml` con `main = "worker/index.ts"` + `[assets] binding = "ASSETS" run_worker_first = ["/api/*"]`.
+- Mismo `event_id` en pixel y CAPI ⇒ Meta deduplica automáticamente.
+
+### Secrets del Worker (NO commitear)
+
+```bash
+wrangler secret put META_PIXEL_ID         # 1637338760901793
+wrangler secret put META_ACCESS_TOKEN     # rotar antes de producción
+wrangler secret put META_TEST_EVENT_CODE  # solo para QA — borrar después
+```
+
+Para `wrangler dev` local: crear `.dev.vars` (gitignored):
+
+```
+META_PIXEL_ID=...
+META_ACCESS_TOKEN=...
+META_TEST_EVENT_CODE=...
+```
+
+## Webhooks GHL (LeadConnectorHQ)
+
+- `VITE_WEBHOOK_REGISTRO` — disparado por RegistrationModal al submit.
+- `VITE_WEBHOOK_CALIFICACION` — disparado por QualifyModal al responder ambas preguntas.
 
 ## Estructura clave
+
 ```
 src/
   views/
-    FunnelView.vue          ← / — PÁGINA PRINCIPAL (funnel VSL + RegistrationModal)
-    VideoView.vue           ← /ver-video — VSL Wistia + timer 2 min + contact guard
-    BookingView.vue         ← /agendar — GHL calendar iframe pre-llenado
-    BookedView.vue          ← /cita-confirmada — orquestador de subcomponentes
-    NoSpaceView.vue         ← /sin-espacio — rechazo + teaser curso + cooldown 24h
-    PrivacyPolicyView.vue   ← /politicas-privacidad
-    LegalNoticeView.vue     ← /aviso-legal
+    FunnelView.vue           ← / — landing comunidad preventa
+    VIPConfirmedView.vue     ← /registrada — confirmación VIP
+    NoSpaceView.vue          ← /sin-cupo — rechazo
+    PrivacyPolicyView.vue    ← /politicas-privacidad
+    LegalNoticeView.vue      ← /aviso-legal
   components/
-    RegistrationModal.vue   ← Modal de captura (nombre, apellido, email, teléfono, empresa)
-    CalendarModal.vue       ← Modal de calificación 3 preguntas → routing
-    booked/                 ← Subcomponentes de BookedView
-      BookedHeader.vue
-      BookedHero.vue        ← Recibe prop :contact-name
-      BookedSteps.vue       ← Recibe prop :steps
-      BookedTeam.vue        ← Recibe prop :team
-      BookedFooter.vue
-  components/globals/
-    TheGlobalLoader.vue     ← Loader eliminado (no se usa — no importar)
-  assets/
-    logos/                  ← Logo-large.png, logo-small.png (Ocean Safety)
-    team/                   ← (pendiente: foto Roberto Allú)
-    testimonios/            ← (pendiente: testimonios Ocean Safety)
+    RegistrationModal.vue    ← captura (nombre, apellido, email, teléfono, país) + emit('submitted')
+    QualifyModal.vue         ← 2 preguntas filtro VIP → /registrada o /sin-cupo
+    SocialProofToast.vue     ← toast cíclico solo en /
+    booked/                  ← orfanos del pivote previo (no usados)
+  utils/
+    tracking.ts              ← Pixel + CAPI util
+    fbclid.ts                ← captureFbParams(), getStoredFbParams()
+    ghl.ts                   ← trackStage, generateEventId
+  stores/
+    contact.ts               ← Pinia store opcional
+worker/
+  index.ts                   ← Cloudflare Worker entry — rutea /api/capi
+  capi.ts                    ← Conversions API handler con SHA-256
+  types.ts                   ← Env, CapiClientPayload, etc.
+public/
+  llms.txt, robots.txt, sitemap.xml — todo apunta a luisapitabejarano.com
+wrangler.toml                ← Worker + assets binding
+.env                         ← solo VITE_WEBHOOK_*  (no commitear)
+.env.example                 ← documenta variables públicas
+.dev.vars                    ← Worker secrets locales (gitignored)
 ```
 
-## Padding mobile — patrón de BookedView
-`BookedView` centraliza el padding en `booked-view__container` (`padding: 0 1.5rem` mobile, `0 2rem` desktop).
-Los subcomponentes (`BookedHero`, `BookedSteps`, `BookedTeam`) usan `padding: 0` horizontal — heredan del contenedor.
+## Colores de marca
 
-## Videos
-- **Wistia media-id `u9yljeo589`** → **TODO: reemplazar con el video ID de Ocean Safety**
-- Script Wistia no se agrega al HTML global; se usa iframe responsive 16:9
-
-## Funnel — Contenido Ocean Safety
-- **Headline**: "Profesionaliza tu flota y elimina las paradas no programadas con ingeniería náutica japonesa"
-- **Especialista**: Roberto Allú — Especialista en Soluciones Náuticas Industriales
-- **Marca**: Honda Marine (representantes oficiales Ecuador)
-- **Segmentos**: flotas camaroneras, transporte fluvial/marítimo, seguridad naval
-- **Motores clave**: BF2.3 (enfriado por aire), BF150 VTEC BLAST, 250HP, 350HP
-- **CTA principal**: "AGENDAR CONSULTA TÉCNICA GRATIS" → abre `RegistrationModal`
-- **Entidad legal**: OCEAN SAFETY (pendiente nombre legal exacto)
-
-## Imágenes CDN
-Las imágenes del funnel se suben a Cloudinary:
-- Cloud: `dpuody0df`
-- Las URLs se almacenan en `/tmp/cloudinary-urls.json` después de ejecutar el script de upload
-
-## Colores de marca (Ocean Safety — light theme)
 ```scss
-// Variables en colorVariables.module.scss
-// Alias BAKANO mantiene compatibilidad; aliases OS recomendados para código nuevo
-$OS-RED:     #CC0000   // Honda red — CTAs
-$OS-NAVY:    #003F7D   // Ocean navy — brand principal
-$OS-BLUE:    #0066CC   // Ocean blue — secundario
-$OS-DARK:    #0D1B2A   // Texto oscuro
-$OS-LIGHT:   #F0F6FF   // Fondo claro
-$OS-SURFACE: #F5F8FF   // Superficies/cards
+// Hardcoded inline en componentes nuevos. La paleta canónica:
+$LPB-GREEN:    #16C784  // CTAs y acentos
+$LPB-GREEN-D:  #0A9E68  // Hover
+$LPB-BLACK:    #0D1117  // Texto / bloques oscuros
+$LPB-LIGHT:    #F0FFF8  // Fondos suaves
+$LPB-SURFACE:  #F5FFFA  // Cards
 ```
 
-## Fuentes
-- Headings: **Outfit** (800)
-- Body: **Plus Jakarta Sans**
-- Accent/CTAs: **Space Grotesk**
-- UI: **Manrope**
+## Fuentes (cargadas desde Google Fonts en `index.html`)
+
+- Headings: **Outfit** (700, 800)
+- Body: **Plus Jakarta Sans** (400, 500, 600, 700)
+- Accent / CTAs: **Space Grotesk** (500, 600, 700)
+- Auxiliar: **Manrope**
 
 ## Comandos
+
 ```bash
-pnpm dev        # desarrollo local
-pnpm build      # build de producción
-pnpm type-check # TypeScript check
+pnpm dev                    # Vite dev (frontend solo)
+pnpm build                  # type-check + build a dist/
+pnpm type-check             # vue-tsc --build
+wrangler dev                # Worker local + sirve dist/ + endpoint /api/capi
+wrangler secret put VAR     # subir secret a Cloudflare
+wrangler deploy             # deploy a Workers
 ```
 
 ## No hacer
-- No agregar Header/Footer de navegación al funnel (la app ya no los monta)
-- No usar emojis en ningún lugar — usar íconos FontAwesome (`<i class="fa-solid fa-...">`)
-- No usar el HomeView.vue (obsoleto, reemplazado por FunnelView.vue)
-- No usar ThankYouView.vue (obsoleto, reemplazado por VideoView + BookingView + BookedView)
+
+- No agregar Header/Footer global; el funnel monta su propio footer en cada view.
+- No usar emojis en UI — siempre íconos FontAwesome (`<i class="fa-solid fa-...">`).
+- No exponer `META_ACCESS_TOKEN` en cliente ni en `.env` versionado.
+- No crear nuevas rutas sin actualizar `sitemap.xml` y este documento.
+- No reusar la storage key `os_*` ni `os_disq_at` (legado de Ocean Safety eliminado).
+- No mostrar precios públicos: TBD. Solo "capital tres cifras" como filtro.
+
+## Pendientes externos (requieren input del titular)
+
+1. **Datos legales reales** de Luisa Pita Bejarano — nombre legal, RUC/cédula, dirección, email oficial. Hoy aparecen como `[PENDIENTE: ...]` en `PrivacyPolicyView` y `LegalNoticeView`.
+2. **Rotar token de Meta Conversions API** desde Meta Business → System Users (el token se compartió en chat plano; el secret del Worker debe ser uno nuevo).
+3. **Deliverables exactos del año** dentro de la comunidad — los bullets de `FunnelView` son honestos pero genéricos.
+4. **Captions de Instagram** representativos si se quiere afinar la voz del copy a Luisa real.

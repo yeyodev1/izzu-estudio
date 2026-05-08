@@ -1,1067 +1,940 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+/**
+ * FunnelView.vue — /
+ *
+ * Landing principal de la preventa de la comunidad anual de Luisa Pita Bejarano.
+ * Audiencia: mujeres ocupadas / dueñas de negocio decididas a invertir un año
+ * entero en su transformación. Capital tres cifras como filtro implícito.
+ */
+import { onMounted, ref } from 'vue'
 import RegistrationModal from '@/components/RegistrationModal.vue'
+import QualifyModal from '@/components/QualifyModal.vue'
+import UrgencyBar from '@/components/UrgencyBar.vue'
 import { captureFbParams } from '@/utils/fbclid'
+import { trackPageView, trackViewContent } from '@/utils/tracking'
+
 const CDN = 'https://res.cloudinary.com/dkosgkjpq/image/upload'
-const LUISA_AUTHORITY = `${CDN}/w_560,h_700,c_fill,g_face,q_auto,f_auto/luisa-pita/luisa-11.jpg`
-const LUISA_VSL = `${CDN}/w_1280,h_720,c_fill,g_face,q_auto,f_auto/luisa-pita/luisa-2.jpg`
+const LUISA_HERO = `${CDN}/w_960,h_1080,c_fill,g_face,q_auto,f_auto/luisa-pita/luisa-2.jpg`
+const LUISA_PORTRAIT = `${CDN}/w_560,h_700,c_fill,g_face,q_auto,f_auto/luisa-pita/luisa-11.jpg`
 
-const router = useRouter()
-const modalOpen = ref(false)
-const IS_DEV = window.location.hostname === 'localhost'
-
-const openModal = () => {
-  if (!IS_DEV) {
-    const disqAt = localStorage.getItem('lpb_disq_at')
-    if (disqAt && Date.now() - Number(disqAt) < 24 * 60 * 60 * 1000) {
-      router.push('/sin-espacio')
-      return
-    }
-  }
-  modalOpen.value = true
+interface Lead {
+  nombre: string
+  apellido: string
+  email: string
+  phone: string
+  country: string
+  eventId: string
 }
 
-const stats = [
-  {
-    icon: 'fa-solid fa-users',
-    number: '200+',
-    text: 'Mujeres transformadas con el programa',
-  },
-  {
-    icon: 'fa-solid fa-calendar-check',
-    number: '8',
-    text: 'Semanas para resultados reales y duraderos',
-  },
-  {
-    icon: 'fa-solid fa-heart-pulse',
-    number: '97%',
-    text: 'Tasa de éxito sin efecto rebote',
-  },
-]
+const registerOpen = ref(false)
+const qualifyOpen = ref(false)
+const lead = ref<Lead | null>(null)
 
-const pillars = [
-  'Sin dietas restrictivas que te hacen sufrir y abandonar',
-  'Sin rutinas de 2 horas imposibles para tu agenda',
-  'Sin el efecto rebote de siempre',
-  'Con un plan personalizado que funciona para mujeres ocupadas',
-]
+const openRegister = () => {
+  registerOpen.value = true
+  trackViewContent({
+    custom: {
+      content_name: 'Comunidad Anual Luisa Pita - CTA Preventa',
+      content_category: 'community-presale-cta',
+    },
+  })
+}
 
-const methodology = [
-  {
-    num: '01',
-    icon: 'fa-solid fa-clipboard-list',
-    title: 'Evaluación Personalizada',
-    body: 'Analizamos tu historial, metabolismo y rutina diaria para crear un plan 100% adaptado a ti y tu estilo de vida.',
-  },
-  {
-    num: '02',
-    icon: 'fa-solid fa-bowl-food',
-    title: 'Plan Nutricional Flexible',
-    body: 'Nada de prohibiciones. Aprendes a comer de forma inteligente, sin pasar hambre, encajando en tu vida real.',
-  },
-  {
-    num: '03',
-    icon: 'fa-solid fa-fire-flame-curved',
-    title: 'Movimiento Eficiente',
-    body: 'Rutinas de 20-30 minutos diseñadas para mujeres ocupadas. Máximos resultados con el mínimo tiempo disponible.',
-  },
-]
-
-// Countdown urgency (24h rolling)
-const hours = ref('23')
-const minutes = ref('47')
-const seconds = ref('12')
-let interval: ReturnType<typeof setInterval>
+const onSubmitted = (payload: Lead) => {
+  lead.value = payload
+  qualifyOpen.value = true
+}
 
 onMounted(() => {
   captureFbParams()
-  let total = 23 * 3600 + 47 * 60 + 12
-  interval = setInterval(() => {
-    total--
-    if (total <= 0) total = 23 * 3600 + 59 * 60 + 59
-    hours.value = String(Math.floor(total / 3600)).padStart(2, '0')
-    minutes.value = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
-    seconds.value = String(total % 60).padStart(2, '0')
-  }, 1000)
+  trackPageView()
 })
 
-onUnmounted(() => clearInterval(interval))
+const includes = [
+  {
+    icon: 'fa-dumbbell',
+    title: 'Rutinas semanales para mujeres ocupadas',
+    body: 'Entrenamientos diseñados por Luisa para hacer en casa o en gimnasio, sin perder horas. Para tu agenda real, no para una imaginaria.',
+  },
+  {
+    icon: 'fa-people-group',
+    title: 'Comunidad cerrada un año entero',
+    body: 'Un grupo privado de mujeres serias que avanzan contigo. Sin curiosas, sin ruido — solo decididas.',
+  },
+  {
+    icon: 'fa-utensils',
+    title: 'Plan nutricional flexible',
+    body: 'Hábitos sostenibles, no dietas restrictivas. Adaptado para que viajes, salgas a comer y sigas avanzando.',
+  },
+  {
+    icon: 'fa-comments',
+    title: 'Sesiones grupales con Luisa',
+    body: 'Espacios en vivo durante el año para resolver tus dudas, ajustar tu plan y mantenerte en ruta.',
+  },
+  {
+    icon: 'fa-bullseye',
+    title: 'Retos mensuales con resultados medibles',
+    body: 'Pequeñas metas que se acumulan a lo largo de 12 meses. Un cuerpo distinto al final del año, no en 8 semanas.',
+  },
+  {
+    icon: 'fa-phone',
+    title: 'Acompañamiento cercano',
+    body: 'Luisa y su equipo cerca de ti todo el año. No estás sola — estás dentro de una estructura que te empuja.',
+  },
+]
+
+const forWho = [
+  'Mujeres ocupadas que dejan su salud para "después" y nunca llega ese después.',
+  'Dueñas de negocio que cuidan a todos menos a sí mismas y ya están listas para cambiarlo.',
+  'Mujeres que pueden disponer de capital tres cifras y entienden que invertir en su cuerpo es invertir en su vida.',
+  'Mujeres que quieren un compromiso de un año entero, no parches de 8 semanas.',
+]
+
+const notForWho = [
+  'Curiosas que solo buscan información gratis.',
+  'Quien aún no puede invertir capital tres cifras hoy.',
+  'Quien no está lista para comprometerse 12 meses con un proceso real.',
+]
+
+const faq = [
+  {
+    q: '¿Cuánto cuesta entrar?',
+    a: 'El precio se anuncia el día que abre la preventa. Por ahora solo confirmamos que es capital tres cifras (USD) y cubre la comunidad un año entero. Las registradas reciben un descuento exclusivo que el público general no ve.',
+  },
+  {
+    q: '¿Cuándo abre la preventa?',
+    a: 'No tenemos fecha pública aún. Las registradas reciben aviso 24 horas antes de que abra. Si no estás en la lista VIP, te enteras al mismo tiempo que el resto.',
+  },
+  {
+    q: '¿Por qué un año entero y no un programa corto?',
+    a: 'Porque transformar un cuerpo y un estilo de vida toma tiempo. Programas cortos dan resultados que se evaporan. Esta comunidad está hecha para lograr cambios que se sostengan en tu vida real.',
+  },
+  {
+    q: '¿Y si me registro pero no califico?',
+    a: 'No pasa nada. Solo significa que esta cohorte no es para ti hoy. Podrás aplicar a una próxima edición cuando estés lista.',
+  },
+  {
+    q: '¿Tengo que vivir en Ecuador?',
+    a: 'No. La comunidad funciona online. Mujeres en Ecuador, Latinoamérica, USA y Europa pueden participar.',
+  },
+]
 </script>
 
 <template>
-  <div class="funnel">
+  <UrgencyBar @cta="openRegister" />
+  <main class="lpb">
+    <!-- ── HERO ────────────────────────────────────────────────── -->
+    <section class="lpb-hero">
+      <div class="lpb-hero__container">
+        <div class="lpb-hero__content">
+          <span class="lpb-hero__eyebrow">
+            <i class="fa-solid fa-lock" aria-hidden="true" />
+            Preventa cerrada · Cupos limitados
+          </span>
+          <h1 class="lpb-hero__title">
+            La comunidad fitness anual de
+            <span class="lpb-hero__title-accent">Luisa Pita</span>
+            está por abrir.
+          </h1>
+          <p class="lpb-hero__subtitle">
+            Hecha para mujeres ocupadas y dueñas de negocio decididas a transformar su cuerpo y su vida en
+            <strong>un año entero con Luisa.</strong>
+          </p>
 
-    <!-- TOP BAR -->
-    <header class="funnel__topbar">
-      <h2 class="funnel__logo-text">LUISA PITA BEJARANO</h2>
-    </header>
+          <ul class="lpb-hero__bullets">
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true" /> Acceso primero — antes que el público</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true" /> Código de descuento exclusivo</li>
+            <li><i class="fa-solid fa-circle-check" aria-hidden="true" /> Solo si tienes capital tres cifras y compromiso anual</li>
+          </ul>
 
-    <!-- URGENCY BANNER -->
-    <div class="funnel__urgency" role="banner">
-      <span class="funnel__urgency-dot" aria-hidden="true" />
-      <span>Cupos limitados — expiran en:</span>
-      <div class="funnel__timer" aria-live="polite" aria-label="Tiempo restante">
-        <span class="funnel__timer-block"><strong>{{ hours }}</strong><small>h</small></span>
-        <span class="funnel__timer-sep" aria-hidden="true">:</span>
-        <span class="funnel__timer-block"><strong>{{ minutes }}</strong><small>m</small></span>
-        <span class="funnel__timer-sep" aria-hidden="true">:</span>
-        <span class="funnel__timer-block"><strong>{{ seconds }}</strong><small>s</small></span>
-      </div>
-    </div>
-
-    <!-- HERO -->
-    <section class="funnel__hero" aria-labelledby="funnel-headline">
-      <div class="funnel__container">
-
-
-        <p class="funnel__eyebrow">
-          <i class="fa-solid fa-heart-pulse" aria-hidden="true"></i>
-          Programa de Transformación para Mujeres Ocupadas
-        </p>
-
-        <h1 id="funnel-headline" class="funnel__headline">
-          Baja 8 kilos en 8 semanas
-          <span class="funnel__headline-accent">sin efecto rebote</span>
-          — aunque ya lo hayas intentado antes
-        </h1>
-
-        <ul class="funnel__pillars" role="list">
-          <li v-for="p in pillars" :key="p" class="funnel__pillar">
-            <i class="fa-solid fa-check" aria-hidden="true"></i>
-            {{ p }}
-          </li>
-        </ul>
-
-        <!-- VSL Gated Area -->
-        <div class="funnel__vsl-wrap">
-          <div class="funnel__vsl" @click="openModal()" role="button" aria-label="Ver video" tabindex="0">
-            <div class="funnel__vsl-bg">
-              <img :src="LUISA_VSL" class="funnel__vsl-thumb" alt="Luisa Pita Bejarano — Ver el video" />
-              <div class="funnel__vsl-vignette"></div>
-            </div>
-            <div class="funnel__vsl-overlay">
-              <div class="funnel__vsl-play-wrap">
-                <div class="funnel__vsl-play">
-                  <i class="fa-solid fa-play" aria-hidden="true"></i>
-                </div>
-                <span class="funnel__vsl-play-label">Ver el video gratis</span>
-              </div>
-              <p class="funnel__vsl-caption">Descubre el método exacto que usaron más de 200 mujeres para bajar 8 kilos en 8 semanas — sin efecto rebote</p>
-            </div>
-            <div class="funnel__vsl-duration" aria-hidden="true">
-              <i class="fa-solid fa-circle-play"></i>
-              Video de 8 min
-            </div>
-          </div>
-        </div>
-
-        <!-- CTA -->
-        <div class="funnel__cta-wrap">
-          <button class="funnel__cta-btn" @click="openModal()">
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-            QUIERO MI PLAN PERSONALIZADO
+          <button class="lpb-hero__cta" type="button" @click="openRegister">
+            Quiero mi cupo VIP
+            <i class="fa-solid fa-arrow-right" aria-hidden="true" />
           </button>
-          <p class="funnel__cta-sub">
-            <i class="fa-solid fa-lock" aria-hidden="true"></i>
-            Cupos limitados &nbsp;·&nbsp; Sin compromiso &nbsp;·&nbsp; Acceso inmediato
-          </p>
+          <p class="lpb-hero__legal">No es para todas. Si calificas, recibes el aviso primero.</p>
         </div>
 
+        <figure class="lpb-hero__visual">
+          <img
+            :src="LUISA_HERO"
+            alt="Luisa Pita Bejarano — coach de transformación corporal"
+            loading="eager"
+            width="480"
+            height="600"
+          />
+        </figure>
       </div>
     </section>
 
-    <!-- STATS -->
-    <section class="funnel__stats" aria-label="Resultados comprobados">
-      <div class="funnel__container">
-        <p class="funnel__section-label funnel__section-label--light">Resultados reales — mujeres reales</p>
-        <div class="funnel__stats-grid">
-          <div v-for="stat in stats" :key="stat.number" class="funnel__stat">
-            <div class="funnel__stat-icon" aria-hidden="true">
-              <i :class="stat.icon"></i>
-            </div>
-            <strong class="funnel__stat-number">{{ stat.number }}</strong>
-            <p class="funnel__stat-text">{{ stat.text }}</p>
-          </div>
-        </div>
+    <!-- ── PROMESA ─────────────────────────────────────────────── -->
+    <section class="lpb-promise">
+      <div class="lpb-container">
+        <h2>Un año contigo, un año cerca de Luisa.</h2>
+        <p>
+          Esta no es una dieta de 30 días, ni un reto de 8 semanas. Es la decisión de
+          dedicarte un año entero — con un equipo que te empuja, una comunidad que te sostiene y una metodología
+          probada por miles de mujeres en Ecuador y Latinoamérica.
+        </p>
       </div>
     </section>
 
-    <!-- PROBLEMA -->
-    <section class="funnel__problem" aria-labelledby="problem-heading">
-      <div class="funnel__container">
-        <p class="funnel__section-label">¿Te identificas con esto?</p>
-        <h2 id="problem-heading" class="funnel__section-title">
-          La trampa en la que caen la mayoría de mujeres
-        </h2>
-        <div class="funnel__problem-grid">
-          <div class="funnel__problem-item">
-            <i class="fa-solid fa-triangle-exclamation funnel__problem-icon" aria-hidden="true"></i>
-            <div>
-              <strong>Dietas que duran 2 semanas</strong>
-              <p>Restricción extrema → hambre → ansiedad → abandono → culpa. El ciclo de siempre que nunca lleva a resultados duraderos.</p>
-            </div>
-          </div>
-          <div class="funnel__problem-item">
-            <i class="fa-solid fa-triangle-exclamation funnel__problem-icon" aria-hidden="true"></i>
-            <div>
-              <strong>Rutinas de gym imposibles</strong>
-              <p>Planes diseñados para personas con 2 horas libres al día. Si tienes trabajo, familia y responsabilidades, simplemente no encajan.</p>
-            </div>
-          </div>
-          <div class="funnel__problem-item">
-            <i class="fa-solid fa-triangle-exclamation funnel__problem-icon" aria-hidden="true"></i>
-            <div>
-              <strong>El efecto rebote inevitable</strong>
-              <p>Bajas kilos rápido y los recuperas todos en pocas semanas. No es falta de voluntad — es que el método estaba mal desde el principio.</p>
-            </div>
-          </div>
+    <!-- ── INCLUYE ─────────────────────────────────────────────── -->
+    <section class="lpb-includes">
+      <div class="lpb-container">
+        <h2>Qué incluye el año dentro de la comunidad</h2>
+        <p class="lpb-includes__lead">
+          Un sistema completo, no piezas sueltas. El detalle exacto de cada componente se confirma el día de la preventa.
+        </p>
+        <div class="lpb-includes__grid">
+          <article v-for="item in includes" :key="item.title" class="lpb-card">
+            <span class="lpb-card__icon">
+              <i :class="['fa-solid', item.icon]" aria-hidden="true" />
+            </span>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.body }}</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- METODOLOGÍA -->
-    <section class="funnel__method" aria-labelledby="method-heading">
-      <div class="funnel__container">
-        <p class="funnel__section-label">Cómo funciona el programa</p>
-        <h2 id="method-heading" class="funnel__section-title">
-          Tres pilares que garantizan resultados sin rebote
-        </h2>
-        <div class="funnel__method-grid">
-          <div v-for="m in methodology" :key="m.num" class="funnel__method-card">
-            <div class="funnel__method-num" aria-hidden="true">{{ m.num }}</div>
-            <div class="funnel__method-icon" aria-hidden="true">
-              <i :class="m.icon"></i>
-            </div>
-            <h3 class="funnel__method-title">{{ m.title }}</h3>
-            <p class="funnel__method-body">{{ m.body }}</p>
-          </div>
+    <!-- ── PARA QUIÉN ES / NO ES ───────────────────────────────── -->
+    <section class="lpb-fitwho">
+      <div class="lpb-container lpb-fitwho__grid">
+        <div class="lpb-fitwho__col lpb-fitwho__col--for">
+          <h3>
+            <i class="fa-solid fa-circle-check" aria-hidden="true" />
+            Esta comunidad es para ti si…
+          </h3>
+          <ul>
+            <li v-for="line in forWho" :key="line">{{ line }}</li>
+          </ul>
         </div>
-      </div>
-    </section>
-
-    <!-- TESTIMONIAL -->
-    <section class="funnel__testimonial" aria-labelledby="testimonial-heading">
-      <div class="funnel__container">
-        <p class="funnel__section-label">Lo que dicen nuestras alumnas</p>
-        <div class="funnel__testimonial-card">
-          <i class="fa-solid fa-quote-left funnel__testimonial-quote" aria-hidden="true"></i>
-          <blockquote class="funnel__testimonial-text">
-            "Llevaba años intentando bajar de peso con dietas de moda y siempre recuperaba todo en dos meses.
-            Con el programa de Luisa bajé 9 kilos en 8 semanas y lo más increíble es que ya van 6 meses y los mantuve.
-            Por fin entendí cómo funciona mi cuerpo."
-          </blockquote>
-          <footer class="funnel__testimonial-author">
-            <div class="funnel__testimonial-avatar" aria-hidden="true">
-              <i class="fa-solid fa-user"></i>
-            </div>
-            <div>
-              <strong>Madre de familia, ejecutiva</strong>
-              <span>Participante del programa — 9 kg menos, sin rebote</span>
-            </div>
-          </footer>
-        </div>
-      </div>
-    </section>
-
-    <!-- AUTHORITY — Luisa Pita Bejarano -->
-    <section class="funnel__authority" aria-labelledby="authority-heading">
-      <div class="funnel__container funnel__authority-inner">
-        <div class="funnel__authority-photo-wrap">
-          <div class="funnel__authority-photo-frame">
-            <img :src="LUISA_AUTHORITY" alt="Luisa Pita Bejarano" class="funnel__authority-img" loading="lazy" />
-          </div>
-        </div>
-        <div class="funnel__authority-content">
-          <p class="funnel__authority-eyebrow">Tu coach de transformación</p>
-          <h2 id="authority-heading" class="funnel__authority-name">Luisa Pita Bejarano</h2>
-          <p class="funnel__authority-role">Coach de Transformación Corporal para Mujeres Ocupadas</p>
-          <p class="funnel__authority-bio">
-            Especializada en ayudar a mujeres adultas ocupadas a perder grasa y tonificar su cuerpo
-            sin dietas imposibles ni rutinas que no encajan en su vida real.
-            Mi método elimina el efecto rebote porque ataca la causa raíz, no los síntomas.
-          </p>
-          <ul class="funnel__authority-creds" role="list">
-            <li><i class="fa-solid fa-check-circle" aria-hidden="true"></i> Especialista en nutrición y hábitos sostenibles</li>
-            <li><i class="fa-solid fa-check-circle" aria-hidden="true"></i> Método comprobado: 8 kilos en 8 semanas sin rebote</li>
-            <li><i class="fa-solid fa-check-circle" aria-hidden="true"></i> Más de 200 mujeres transformadas con resultados duraderos</li>
+        <div class="lpb-fitwho__col lpb-fitwho__col--not">
+          <h3>
+            <i class="fa-solid fa-circle-xmark" aria-hidden="true" />
+            No es para ti si…
+          </h3>
+          <ul>
+            <li v-for="line in notForWho" :key="line">{{ line }}</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- CTA FINAL -->
-    <section class="funnel__cta-final" aria-labelledby="cta-final-heading">
-      <div class="funnel__container">
-        <h2 id="cta-final-heading" class="funnel__cta-final-title">
-          ¿Lista para tu transformación?
-        </h2>
-        <p class="funnel__cta-final-sub">
-          Accede al video y descubre el método exacto que usaron más de 200 mujeres para bajar 8 kilos
-          en 8 semanas — sin pasar hambre, sin rutinas imposibles y sin efecto rebote.
-        </p>
-        <button class="funnel__cta-btn" @click="openModal()">
-          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          QUIERO MI PLAN PERSONALIZADO
+    <!-- ── PREVENTA: CÓMO FUNCIONA ─────────────────────────────── -->
+    <section class="lpb-presale">
+      <div class="lpb-container">
+        <span class="lpb-presale__eyebrow">Cómo funciona la preventa</span>
+        <h2>Tu nombre primero. Tu descuento exclusivo. Tu cupo asegurado.</h2>
+        <ol class="lpb-presale__steps">
+          <li>
+            <span>1</span>
+            <p><strong>Te registras hoy.</strong> Confirmas que tienes capital tres cifras y que estás lista para el año entero.</p>
+          </li>
+          <li>
+            <span>2</span>
+            <p><strong>Recibes aviso 24h antes</strong> de que abra la preventa. El resto del mundo se entera ese mismo día.</p>
+          </li>
+          <li>
+            <span>3</span>
+            <p><strong>Te llega tu código de descuento único.</strong> Solo válido durante la ventana de preventa, solo para ti.</p>
+          </li>
+          <li>
+            <span>4</span>
+            <p><strong>Reservas tu cupo</strong> en la comunidad anual y empiezas a transformar tu vida con Luisa.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ── AUTORIDAD ───────────────────────────────────────────── -->
+    <section class="lpb-author">
+      <div class="lpb-container lpb-author__grid">
+        <figure>
+          <img
+            :src="LUISA_PORTRAIT"
+            alt="Luisa Pita Bejarano"
+            loading="lazy"
+            width="280"
+            height="350"
+          />
+        </figure>
+        <div>
+          <span class="lpb-author__eyebrow">Quién está detrás</span>
+          <h2>Luisa Pita Bejarano</h2>
+          <p>
+            Coach de transformación corporal especializada en mujeres adultas con vidas ocupadas. Ha guiado a más de 200 mujeres
+            en Ecuador y Latinoamérica en procesos de cambio sostenidos — sin dietas restrictivas, sin rutinas imposibles, sin efecto rebote.
+          </p>
+          <p>
+            Esta comunidad es la evolución natural de su trabajo: dejar de empujar a sus alumnas en bloques cortos
+            para acompañarlas un año completo, con la profundidad que ese tiempo permite.
+          </p>
+          <a
+            href="https://www.instagram.com/luisapitabejarano/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="lpb-author__link"
+          >
+            <i class="fa-brands fa-instagram" aria-hidden="true" />
+            @luisapitabejarano
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FAQ ─────────────────────────────────────────────────── -->
+    <section class="lpb-faq">
+      <div class="lpb-container">
+        <h2>Lo que las registradas suelen preguntar</h2>
+        <div class="lpb-faq__list">
+          <details v-for="item in faq" :key="item.q" class="lpb-faq__item">
+            <summary>
+              <span>{{ item.q }}</span>
+              <i class="fa-solid fa-chevron-down" aria-hidden="true" />
+            </summary>
+            <p>{{ item.a }}</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA FINAL ───────────────────────────────────────────── -->
+    <section class="lpb-final">
+      <div class="lpb-container">
+        <h2>Solo decisión. Una pregunta:</h2>
+        <p>¿Estás lista para regalarte un año contigo, contra todo el ruido que ya conoces?</p>
+        <button class="lpb-hero__cta" type="button" @click="openRegister">
+          Reservar mi cupo VIP
+          <i class="fa-solid fa-arrow-right" aria-hidden="true" />
         </button>
-        <p class="funnel__cta-sub">
-          <i class="fa-solid fa-lock" aria-hidden="true"></i>
-          Cupos limitados &nbsp;·&nbsp; Acceso inmediato &nbsp;·&nbsp; Sin compromiso
+        <p class="lpb-final__note">
+          Capital tres cifras · Compromiso de un año entero · Solo registradas reciben código de descuento exclusivo
         </p>
       </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="funnel__footer">
-      <div class="funnel__container funnel__footer-inner">
-        <h2 class="funnel__footer-logo-text">LUISA PITA BEJARANO</h2>
-        <nav class="funnel__footer-links" aria-label="Legal">
-          <RouterLink to="/politicas-privacidad">Política de Privacidad</RouterLink>
-          <RouterLink to="/aviso-legal">Aviso Legal</RouterLink>
+    <footer class="lpb-foot">
+      <div class="lpb-container">
+        <p>© Luisa Pita Bejarano</p>
+        <nav>
+          <RouterLink to="/politicas-privacidad">Privacidad</RouterLink>
+          <RouterLink to="/aviso-legal">Aviso legal</RouterLink>
         </nav>
-        <p class="funnel__footer-copy">
-          © {{ new Date().getFullYear() }} LUISA PITA BEJARANO. Todos los derechos reservados.
-        </p>
       </div>
     </footer>
 
-  </div>
-
-  <RegistrationModal :open="modalOpen" @close="modalOpen = false" />
+    <RegistrationModal
+      :open="registerOpen"
+      @close="registerOpen = false"
+      @submitted="onSubmitted"
+    />
+    <QualifyModal
+      :open="qualifyOpen"
+      :lead="lead"
+      @close="qualifyOpen = false"
+    />
+  </main>
 </template>
 
 <style lang="scss" scoped>
-@use '@/styles/fonts.modules.scss' as fonts;
-@use '@/styles/colorVariables.module.scss' as colors;
-
-.funnel {
+.lpb {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  color: #0d1117;
   background: #ffffff;
-  color: colors.$OS-DARK;
-  min-height: 100vh;
-  font-family: fonts.$font-secondary;
+  padding-top: 96px;
 
-  &__container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-    @media (min-width: 768px) { padding: 0 2rem; }
+  @media (min-width: 768px) {
+    padding-top: 60px;
   }
 }
 
-// ── Top bar ──────────────────────────────────────────────────────────────────
-.funnel__topbar {
-  background: #ffffff;
-  border-bottom: 1px solid #D1FAE5;
-  padding: 0.9rem 1.5rem;
-  display: flex;
-  justify-content: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 1px 12px rgba(22, 199, 132, 0.06);
+.lpb-container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+
+  @media (min-width: 768px) {
+    padding: 0 2rem;
+  }
 }
 
-.funnel__logo {
-  height: 38px;
-  width: auto;
-  object-fit: contain;
+// ── HERO ────────────────────────────────────────────────────────
+.lpb-hero {
+  background: radial-gradient(circle at 20% 0%, #f0fff8 0%, #ffffff 55%, #ffffff 100%);
+  padding: 3rem 0 4rem;
+
+  @media (min-width: 960px) {
+    padding: 4.5rem 0 5rem;
+  }
 }
 
-// ── Urgency banner ───────────────────────────────────────────────────────────
-.funnel__urgency {
-  background: colors.$OS-NAVY;
-  color: #ffffff;
-  padding: 0.55rem 1.5rem;
-  display: flex;
+.lpb-hero__container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  gap: 2.5rem;
   align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  font-family: fonts.$font-interface;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+
+  @media (min-width: 960px) {
+    grid-template-columns: 1.15fr 1fr;
+    gap: 3.5rem;
+    padding: 0 2rem;
+  }
 }
 
-.funnel__urgency-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #4ADE80;
-  flex-shrink: 0;
-  animation: dot-pulse 1.5s infinite;
-}
-
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.75); }
-}
-
-.funnel__timer {
+.lpb-hero__content {
   display: flex;
-  align-items: center;
-  gap: 0.15rem;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.funnel__timer-block {
-  display: flex;
-  align-items: baseline;
-  gap: 1px;
-  strong { font-size: 0.95rem; font-weight: 800; }
-  small { font-size: 0.68rem; opacity: 0.75; }
-}
-
-.funnel__timer-sep { font-weight: 800; opacity: 0.5; padding: 0 1px; }
-
-// ── Hero ─────────────────────────────────────────────────────────────────────
-.funnel__hero {
-  padding: 3.5rem 0 3rem;
-  background: linear-gradient(180deg, #F0FFF8 0%, #ffffff 70%);
-  text-align: center;
-
-  .funnel__eyebrow { margin-left: auto; margin-right: auto; }
-  .funnel__pillars { justify-content: center; }
-  .funnel__cta-wrap { align-items: center; }
-}
-
-
-.funnel__eyebrow {
+.lpb-hero__eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(colors.$OS-RED, 0.06);
-  border: 1px solid rgba(colors.$OS-RED, 0.14);
-  border-radius: 999px;
-  padding: 0.35rem 0.85rem;
-  color: colors.$OS-RED;
-  font-family: fonts.$font-interface;
+  background: #0d1117;
+  color: #16c784;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  margin: 0 0 1.4rem;
-  i { font-size: 0.8rem; }
-}
-
-.funnel__headline {
-  @include fonts.heading-font(800);
-  font-size: clamp(2rem, 5vw, 3.1rem);
-  line-height: 1.15;
-  color: colors.$OS-DARK;
-  margin: 0 0 1.5rem;
-  letter-spacing: -0.025em;
-
-  &-accent { color: colors.$OS-RED; }
-}
-
-.funnel__vsl-player-container {
-  width: 100%;
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid rgba(colors.$OS-RED, 0.2);
-  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.4);
-  background: #000;
-  line-height: 0;
-
-  @media (max-width: 768px) {
-    border-radius: 12px;
-  }
-}
-
-.funnel__pillars {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
-.funnel__pillar {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.93rem;
-  color: #3A4F6A;
-
-  i {
-    color: colors.$OS-BLUE;
-    font-size: 0.82rem;
-    flex-shrink: 0;
-  }
-}
-
-// ── VSL ──────────────────────────────────────────────────────────────────────
-.funnel__vsl-wrap {
-  margin: 2rem auto;
-  max-width: 760px;
-  width: 100%;
-}
-
-.funnel__vsl {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 2px solid rgba(colors.$OS-RED, 0.2);
-  box-shadow: 0 8px 40px rgba(22, 199, 132, 0.12);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 48px rgba(22, 199, 132, 0.2);
-  }
-  &:focus-visible {
-    outline: 3px solid colors.$OS-RED;
-    outline-offset: 2px;
-  }
-}
-
-.funnel__vsl-bg {
-  position: absolute;
-  inset: 0;
-  background: #0D1117;
-}
-
-.funnel__vsl-thumb {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  filter: brightness(0.82);
-  transform: scale(1.02);
-  transition: transform 0.5s ease, filter 0.4s ease;
-
-  .funnel__vsl:hover & {
-    transform: scale(1.05);
-    filter: brightness(0.9);
-  }
-}
-
-.funnel__vsl-vignette {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%),
-    linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, transparent 60%, rgba(0,0,0,0.65) 100%);
-  z-index: 1;
-}
-
-.funnel__vsl-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  z-index: 2;
-}
-
-.funnel__vsl-play-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  transition: transform 0.2s ease;
-  .funnel__vsl:hover & { transform: scale(1.06); }
-}
-
-.funnel__vsl-play {
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  background: colors.$OS-RED;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 8px rgba(22, 199, 132, 0.25), 0 8px 32px rgba(0, 0, 0, 0.4);
-  transition: box-shadow 0.3s ease;
-
-  .funnel__vsl:hover & {
-    box-shadow: 0 0 0 14px rgba(22, 199, 132, 0.2), 0 12px 40px rgba(0, 0, 0, 0.5);
-  }
-
-  i {
-    color: #ffffff;
-    font-size: 2rem;
-    margin-left: 6px;
-  }
-}
-
-.funnel__vsl-play-label {
-  color: #ffffff;
-  font-family: fonts.$font-interface;
-  font-size: 0.82rem;
-  font-weight: 700;
   letter-spacing: 0.06em;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
   text-transform: uppercase;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.6);
-  background: rgba(22, 199, 132, 0.85);
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
+  width: max-content;
 }
 
-.funnel__vsl-caption {
-  color: rgba(#ffffff, 0.92);
-  font-size: 0.86rem;
-  font-weight: 600;
-  text-align: center;
-  padding: 0 1.5rem;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
-  max-width: 380px;
-  line-height: 1.45;
-}
-
-.funnel__vsl-duration {
-  position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(4px);
-  color: rgba(#ffffff, 0.9);
-  font-family: fonts.$font-interface;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.28rem 0.65rem;
-  border-radius: 999px;
-  i { font-size: 0.7rem; color: colors.$OS-RED; }
-}
-
-// ── CTA ──────────────────────────────────────────────────────────────────────
-.funnel__cta-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.funnel__cta-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  background: colors.$OS-RED;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  padding: 1.1rem 2.5rem;
-  font-family: fonts.$font-accent;
-  font-size: 1rem;
+.lpb-hero__title {
+  font-family: 'Outfit', system-ui, sans-serif;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  width: 100%;
-  max-width: 480px;
-  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 20px rgba(22, 199, 132, 0.35);
-
-  &:hover {
-    background: darken(#16C784, 8%);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 28px rgba(22, 199, 132, 0.45);
-  }
-  &:active { transform: translateY(0); }
-}
-
-.funnel__cta-sub {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  color: #8A9BB5;
-  margin: 0;
-  i { font-size: 0.72rem; }
-}
-
-// ── Stats ────────────────────────────────────────────────────────────────────
-.funnel__stats {
-  background: colors.$OS-NAVY;
-  padding: 3rem 0;
-}
-
-.funnel__section-label {
-  font-family: fonts.$font-interface;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: colors.$OS-NAVY;
-  margin: 0 0 1rem;
-
-  &--light { color: rgba(#ffffff, 0.55); }
-}
-
-.funnel__stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  @media (max-width: 580px) {
-    grid-template-columns: 1fr;
-    gap: 1.75rem;
-  }
-}
-
-.funnel__stat { text-align: center; }
-
-.funnel__stat-icon {
-  font-size: 1.6rem;
-  color: rgba(#ffffff, 0.35);
-  margin-bottom: 0.5rem;
-}
-
-.funnel__stat-number {
-  display: block;
-  @include fonts.heading-font(800);
-  font-size: 2.6rem;
-  color: #ffffff;
-  line-height: 1;
-  margin-bottom: 0.4rem;
-  letter-spacing: -0.03em;
-}
-
-.funnel__stat-text {
-  font-size: 0.83rem;
-  color: rgba(#ffffff, 0.7);
-  line-height: 1.45;
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  line-height: 1.05;
   margin: 0;
 }
 
-// ── Problem ──────────────────────────────────────────────────────────────────
-.funnel__problem {
-  padding: 4rem 0;
-  background: #ffffff;
+.lpb-hero__title-accent {
+  color: #16c784;
 }
 
-.funnel__section-title {
-  @include fonts.heading-font(800);
-  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
-  color: colors.$OS-DARK;
-  margin: 0.25rem 0 2rem;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.funnel__problem-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.funnel__problem-item {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  padding: 1.25rem;
-  background: #F0FFF8;
-  border: 1px solid #D1FAE5;
-  border-radius: 12px;
+.lpb-hero__subtitle {
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  line-height: 1.55;
+  color: #41484f;
+  margin: 0;
 
   strong {
-    display: block;
-    color: colors.$OS-DARK;
-    font-size: 0.93rem;
+    color: #0d1117;
     font-weight: 700;
-    margin-bottom: 0.2rem;
-  }
-  p {
-    font-size: 0.86rem;
-    color: #4A5F7A;
-    line-height: 1.5;
-    margin: 0;
   }
 }
 
-.funnel__problem-icon {
-  font-size: 1.2rem;
-  color: colors.$OS-RED;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-// ── Methodology ──────────────────────────────────────────────────────────────
-.funnel__method {
-  padding: 4rem 0;
-  background: colors.$LPB-LIGHT;
-}
-
-.funnel__method-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-  @media (max-width: 700px) { grid-template-columns: 1fr; }
-}
-
-.funnel__method-card {
-  background: #ffffff;
-  border: 1px solid #D1FAE5;
-  border-radius: 16px;
-  padding: 1.75rem 1.5rem;
-  position: relative;
-  box-shadow: 0 2px 12px rgba(22, 199, 132, 0.05);
-}
-
-.funnel__method-num {
-  position: absolute;
-  top: 1rem;
-  right: 1.25rem;
-  @include fonts.heading-font(800);
-  font-size: 2.5rem;
-  color: rgba(colors.$OS-NAVY, 0.07);
-  line-height: 1;
-  user-select: none;
-}
-
-.funnel__method-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: colors.$OS-RED;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-  i { color: #ffffff; font-size: 1.1rem; }
-}
-
-.funnel__method-title {
-  @include fonts.heading-font(700);
-  font-size: 0.97rem;
-  color: colors.$OS-DARK;
-  margin: 0 0 0.5rem;
-}
-
-.funnel__method-body {
-  font-size: 0.86rem;
-  color: #4A5F7A;
-  line-height: 1.55;
-  margin: 0;
-}
-
-// ── Testimonial ──────────────────────────────────────────────────────────────
-.funnel__testimonial {
-  padding: 4rem 0;
-  background: #ffffff;
-}
-
-.funnel__testimonial-card {
-  background: #F0FFF8;
-  border: 1px solid rgba(colors.$OS-RED, 0.1);
-  border-left: 4px solid colors.$OS-RED;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 720px;
-  margin: 0 auto;
-  box-shadow: 0 4px 24px rgba(22, 199, 132, 0.07);
-}
-
-.funnel__testimonial-quote {
-  font-size: 2.2rem;
-  color: rgba(colors.$OS-RED, 0.12);
-  display: block;
-  margin-bottom: 0.75rem;
-  line-height: 1;
-}
-
-.funnel__testimonial-text {
-  font-size: 1.1rem;
-  color: colors.$OS-DARK;
-  line-height: 1.65;
-  margin: 0 0 1.5rem;
-  font-style: italic;
-}
-
-.funnel__testimonial-author {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
-  strong { display: block; color: colors.$OS-DARK; font-size: 0.88rem; font-weight: 700; }
-  span { font-size: 0.78rem; color: #8A9BB5; }
-}
-
-.funnel__testimonial-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: colors.$OS-RED;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  i { color: #ffffff; font-size: 1.2rem; }
-}
-
-// ── Authority ────────────────────────────────────────────────────────────────
-.funnel__authority {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #F0FFF8 0%, #F0FFF8 100%);
-  border-top: 1px solid #D1FAE5;
-  border-bottom: 1px solid #D1FAE5;
-}
-
-.funnel__authority-inner {
-  display: flex;
-  gap: 2.5rem;
-  align-items: flex-start;
-  @media (max-width: 640px) { flex-direction: column; align-items: center; }
-}
-
-.funnel__authority-photo-wrap {
-  flex-shrink: 0;
-  @media (max-width: 640px) { width: 100%; }
-}
-
-.funnel__authority-photo-frame {
-  width: 260px;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(22, 199, 132, 0.2), 0 4px 16px rgba(0,0,0,0.06);
-  border: 3px solid rgba(22, 199, 132, 0.12);
-  @media (max-width: 640px) { width: 100%; max-width: 280px; margin: 0 auto; }
-}
-
-.funnel__authority-img {
-  width: 100%;
-  height: 340px;
-  object-fit: cover;
-  object-position: top center;
-  display: block;
-}
-
-.funnel__authority-content { flex: 1; }
-
-.funnel__authority-eyebrow {
-  font-family: fonts.$font-interface;
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: colors.$OS-BLUE;
-  margin: 0 0 0.35rem;
-}
-
-.funnel__authority-name {
-  @include fonts.heading-font(800);
-  font-size: 2rem;
-  color: colors.$OS-DARK;
-  margin: 0 0 0.2rem;
-  letter-spacing: -0.02em;
-}
-
-.funnel__authority-role {
-  font-size: 0.88rem;
-  color: #8A9BB5;
-  margin: 0 0 1rem;
-}
-
-.funnel__authority-bio {
-  font-size: 0.93rem;
-  color: #3A4F6A;
-  line-height: 1.65;
-  margin: 0 0 1rem;
-  strong { color: colors.$OS-DARK; font-weight: 700; }
-}
-
-.funnel__authority-creds {
+.lpb-hero__bullets {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0.5rem 0 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
 
   li {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.86rem;
-    color: #3A4F6A;
-    i { color: colors.$OS-RED; font-size: 0.82rem; flex-shrink: 0; }
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    color: #1f2933;
+  }
+
+  i {
+    color: #16c784;
   }
 }
 
-// ── CTA Final ────────────────────────────────────────────────────────────────
-.funnel__cta-final {
-  padding: 4.5rem 0;
-  background: colors.$OS-NAVY;
+.lpb-hero__cta {
+  margin-top: 1.25rem;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #16c784;
+  color: #0d1117;
+  border: 0;
+  border-radius: 999px;
+  padding: 1.05rem 1.85rem;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(22, 199, 132, 0.35);
+  transition: transform 140ms ease, box-shadow 200ms ease, background 160ms ease, color 160ms ease;
+
+  &:hover {
+    background: #0a9e68;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 18px 38px rgba(10, 158, 104, 0.4);
+  }
+}
+
+.lpb-hero__legal {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0.4rem 0 0;
+}
+
+.lpb-hero__visual {
+  margin: 0;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(13, 17, 23, 0.18);
+  aspect-ratio: 4 / 5;
+  max-width: 480px;
+  justify-self: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+// ── PROMESA ─────────────────────────────────────────────────────
+.lpb-promise {
+  background: #0d1117;
+  color: #ffffff;
+  padding: 3rem 0;
   text-align: center;
 
-  .funnel__section-label { color: rgba(#ffffff, 0.5); }
-
-  .funnel__cta-btn {
-    margin: 0 auto 1rem;
-    background: colors.$OS-RED;
-    box-shadow: 0 4px 24px rgba(22, 199, 132, 0.4);
-    &:hover { background: darken(#16C784, 8%); }
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+    margin: 0 0 1rem;
   }
 
-  .funnel__cta-sub { color: rgba(#ffffff, 0.5); }
+  p {
+    color: #d1d5db;
+    max-width: 720px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
 }
 
-.funnel__cta-final-title {
-  @include fonts.heading-font(800);
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
-  color: #ffffff;
-  margin: 0 0 0.75rem;
-  letter-spacing: -0.025em;
+// ── INCLUYE ─────────────────────────────────────────────────────
+.lpb-includes {
+  padding: 4rem 0;
+  background: #f5fffa;
+
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3.8vw, 2.3rem);
+    margin: 0 0 0.5rem;
+    text-align: center;
+  }
 }
 
-.funnel__cta-final-sub {
-  font-size: 0.97rem;
-  color: rgba(#ffffff, 0.72);
-  margin: 0 auto 2rem;
-  max-width: 520px;
-  line-height: 1.55;
+.lpb-includes__lead {
+  text-align: center;
+  color: #4b5563;
+  max-width: 640px;
+  margin: 0 auto 2.5rem;
 }
 
-// ── Footer ───────────────────────────────────────────────────────────────────
-.funnel__footer {
-  background: colors.$OS-DARK;
-  padding: 2rem 1.5rem;
+.lpb-includes__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 960px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-.funnel__footer-inner {
+.lpb-card {
+  background: #ffffff;
+  border: 1.5px solid #e5e9ec;
+  border-radius: 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  text-align: center;
-}
+  gap: 0.5rem;
 
-.funnel__footer-logo {
-  height: 30px;
-  width: auto;
-  filter: brightness(100);
-  opacity: 0.6;
-  object-fit: contain;
-}
+  h3 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0;
+  }
 
-.funnel__footer-links {
-  display: flex;
-  gap: 1.5rem;
-
-  a {
-    font-size: 0.78rem;
-    color: rgba(#ffffff, 0.45);
-    text-decoration: none;
-    transition: color 0.2s;
-    &:hover { color: rgba(#ffffff, 0.85); }
+  p {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 }
 
-.funnel__footer-copy {
-  font-size: 0.72rem;
-  color: rgba(#ffffff, 0.28);
+.lpb-card__icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.85rem;
+  background: #16c784;
+  color: #0d1117;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+// ── FOR / NOT FOR ───────────────────────────────────────────────
+.lpb-fitwho {
+  padding: 4rem 0;
+}
+
+.lpb-fitwho__grid {
+  display: grid;
+  gap: 1.5rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.lpb-fitwho__col {
+  border-radius: 1rem;
+  padding: 1.75rem;
+
+  h3 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: #1f2933;
+    line-height: 1.5;
+  }
+}
+
+.lpb-fitwho__col--for {
+  background: #f0fff8;
+  border: 1.5px solid #16c784;
+
+  h3 {
+    color: #0a9e68;
+  }
+}
+
+.lpb-fitwho__col--not {
+  background: #fafafa;
+  border: 1.5px solid #e5e9ec;
+
+  h3 {
+    color: #6b7280;
+  }
+}
+
+// ── PRESALE ─────────────────────────────────────────────────────
+.lpb-presale {
+  background: #0d1117;
+  color: #ffffff;
+  padding: 4rem 0;
+
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3.8vw, 2.2rem);
+    margin: 0.5rem 0 2rem;
+    max-width: 760px;
+  }
+}
+
+.lpb-presale__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #16c784;
+}
+
+.lpb-presale__steps {
+  list-style: none;
+  padding: 0;
   margin: 0;
+  display: grid;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  li {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    padding: 1.25rem;
+  }
+
+  span {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 999px;
+    background: #16c784;
+    color: #0d1117;
+    display: grid;
+    place-items: center;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    color: #d1d5db;
+    line-height: 1.55;
+    font-size: 0.95rem;
+
+    strong {
+      color: #ffffff;
+      font-weight: 700;
+    }
+  }
+}
+
+// ── AUTHOR ──────────────────────────────────────────────────────
+.lpb-author {
+  padding: 4rem 0;
+  background: #f5fffa;
+}
+
+.lpb-author__grid {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 0.7fr 1fr;
+  }
+
+  figure {
+    margin: 0;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(13, 17, 23, 0.18);
+    aspect-ratio: 4 / 5;
+    max-width: 320px;
+    justify-self: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    margin: 0.4rem 0 1rem;
+  }
+
+  p {
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+}
+
+.lpb-author__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #0a9e68;
+}
+
+.lpb-author__link {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #0d1117;
+  text-decoration: none;
+  background: #ffffff;
+  border: 1.5px solid #0d1117;
+  padding: 0.65rem 1.15rem;
+  border-radius: 999px;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  transition: background 160ms ease, color 160ms ease;
+
+  &:hover {
+    background: #0d1117;
+    color: #16c784;
+  }
+}
+
+// ── FAQ ─────────────────────────────────────────────────────────
+.lpb-faq {
+  padding: 4rem 0;
+
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3.8vw, 2.1rem);
+    text-align: center;
+    margin: 0 0 2rem;
+  }
+}
+
+.lpb-faq__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.lpb-faq__item {
+  background: #ffffff;
+  border: 1.5px solid #e5e9ec;
+  border-radius: 1rem;
+  padding: 0.5rem 1.25rem;
+  transition: border-color 160ms ease;
+
+  &[open] {
+    border-color: #16c784;
+    background: #f5fffa;
+  }
+
+  summary {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    i {
+      color: #0a9e68;
+      transition: transform 200ms ease;
+    }
+  }
+
+  &[open] summary i {
+    transform: rotate(180deg);
+  }
+
+  p {
+    color: #4b5563;
+    margin: 0 0 0.85rem;
+    line-height: 1.55;
+    font-size: 0.95rem;
+  }
+}
+
+// ── FINAL ───────────────────────────────────────────────────────
+.lpb-final {
+  background: linear-gradient(180deg, #16c784 0%, #0a9e68 100%);
+  color: #0d1117;
+  padding: 4rem 0;
+  text-align: center;
+
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.7rem, 3.8vw, 2.3rem);
+    margin: 0 0 0.75rem;
+  }
+
+  p {
+    font-size: 1.05rem;
+    margin: 0 0 1.75rem;
+  }
+
+  .lpb-hero__cta {
+    background: #0d1117;
+    color: #16c784;
+    box-shadow: 0 14px 30px rgba(13, 17, 23, 0.4);
+
+    &:hover {
+      background: #ffffff;
+      color: #0d1117;
+    }
+  }
+}
+
+.lpb-final__note {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+// ── FOOTER ──────────────────────────────────────────────────────
+.lpb-foot {
+  padding: 2.5rem 0 3rem;
+  background: #0d1117;
+  color: #d1d5db;
+
+  .lpb-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    align-items: center;
+    text-align: center;
+    font-size: 0.85rem;
+
+    @media (min-width: 640px) {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+  }
+
+  nav {
+    display: flex;
+    gap: 1.25rem;
+  }
+
+  a {
+    color: #16c784;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 </style>

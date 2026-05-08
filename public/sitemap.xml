@@ -1,46 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-
-  <!-- Página principal — Landing VSL -->
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://luisapitabejarano.com/</loc>
-    <lastmod>2026-05-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="es-EC" href="https://luisapitabejarano.com/"/>
-    <xhtml:link rel="alternate" hreflang="es"    href="https://luisapitabejarano.com/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://luisapitabejarano.com/"/>
     <image:image>
       <image:loc>https://res.cloudinary.com/dkosgkjpq/image/upload/w_1200,h_630,c_fill,g_face,q_auto,f_auto/luisa-pita/luisa-11.jpg</image:loc>
-      <image:title>Luisa Pita Bejarano — Coach de Transformación Corporal</image:title>
-      <image:caption>Programa Baja 8 en 8 semanas sin efecto rebote para mujeres ocupadas</image:caption>
+      <image:title>Luisa Pita Bejarano — Coach de transformación corporal</image:title>
     </image:image>
   </url>
-
-  <!-- Confirmación de sesión agendada -->
   <url>
-    <loc>https://luisapitabejarano.com/cita-confirmada</loc>
-    <lastmod>2026-05-04</lastmod>
+    <loc>https://luisapitabejarano.com/registrada</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.6</priority>
   </url>
-
-  <!-- Política de Privacidad -->
+  <url>
+    <loc>https://luisapitabejarano.com/sin-cupo</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
   <url>
     <loc>https://luisapitabejarano.com/politicas-privacidad</loc>
-    <lastmod>2026-05-04</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
-
-  <!-- Aviso Legal -->
   <url>
     <loc>https://luisapitabejarano.com/aviso-legal</loc>
-    <lastmod>2026-05-04</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
-
 </urlset>

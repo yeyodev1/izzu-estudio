@@ -27,5 +27,10 @@ coverage
 *.sln
 *.sw?
 .env
+.env.local
+.dev.vars
+
+# Cloudflare / Wrangler
+.wrangler
 
 *.tsbuildinfo

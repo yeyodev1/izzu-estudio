@@ -1,12 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { parsePhoneNumberFromString, getCountries, getCountryCallingCode, AsYouType } from 'libphonenumber-js'
-import { useRouter } from 'vue-router'
 import { getStoredFbParams } from '@/utils/fbclid'
-const router = useRouter()
+import { trackLead } from '@/utils/tracking'
 
 const props = defineProps<{ open: boolean }>()
-const emit = defineEmits<{ (e: 'close'): void }>()
+
+interface SubmittedPayload {
+  nombre: string
+  apellido: string
+  email: string
+  phone: string
+  country: string
+  eventId: string
+}
+
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'submitted', payload: SubmittedPayload): void
+}>()
 
 // ── Países con emoji flag ─────────────────────────────────────────────────────
 interface Country { code: string; name: string; dial: string; flag: string }
@@ -172,15 +184,49 @@ const handleSubmit = async () => {
   )
 
   submitting.value = false
-  localStorage.setItem('lpb_contact', JSON.stringify({
-    nombre: form.value.nombre.trim(),
-    email: form.value.email.trim().toLowerCase(),
-    phone: parsedPhoneE164.value,
-    timestamp: Date.now(),
-  }))
-  ;(window as any).fbq?.('track', 'CompleteRegistration')
+  const submittedNombre = form.value.nombre.trim()
+  const submittedApellido = form.value.apellido.trim()
+  const submittedEmail = form.value.email.trim().toLowerCase()
+  const submittedPhone = parsedPhoneE164.value
+  const submittedCountry = selectedCountry.value.code
+
+  localStorage.setItem(
+    'lpb_contact',
+    JSON.stringify({
+      nombre: submittedNombre,
+      apellido: submittedApellido,
+      email: submittedEmail,
+      phone: submittedPhone,
+      country: submittedCountry,
+      timestamp: Date.now(),
+    }),
+  )
+
+  trackLead({
+    eventId: leadEventId,
+    user: {
+      email: submittedEmail,
+      phone: submittedPhone,
+      firstName: submittedNombre,
+      lastName: submittedApellido,
+      country: submittedCountry,
+      externalId: submittedEmail,
+    },
+    custom: {
+      content_name: 'Comunidad Anual Luisa Pita - Preventa VIP',
+      content_category: 'community-presale-registration',
+    },
+  })
+
+  emit('submitted', {
+    nombre: submittedNombre,
+    apellido: submittedApellido,
+    email: submittedEmail,
+    phone: submittedPhone,
+    country: submittedCountry,
+    eventId: leadEventId,
+  })
   emit('close')
-  router.push('/ver-video')
 }
 
 // ── Keyboard trap ─────────────────────────────────────────────────────────────
@@ -226,9 +272,9 @@ watch(dropdownOpen, open => {
 
           <!-- ── FORMULARIO ─────────────────────────────────── -->
           <!-- ── FORMULARIO ─────────────────────────────────── -->
-            <p class="rmodal__eyebrow">Acceso gratuito</p>
-            <h2 id="rmodal-title" class="rmodal__title">Ver el video<br><span class="rmodal__title-accent">gratis</span></h2>
-            <p class="rmodal__subtitle">Cupos limitados — completa tus datos y accede al video ahora.</p>
+            <p class="rmodal__eyebrow">Lista VIP de preventa</p>
+            <h2 id="rmodal-title" class="rmodal__title">Asegura tu cupo<br><span class="rmodal__title-accent">VIP</span></h2>
+            <p class="rmodal__subtitle">Solo para mujeres decididas a invertir un año entero con Luisa. Las registradas reciben aviso 24h antes y un código de descuento exclusivo cuando abra la preventa.</p>
 
             <form class="rmodal__form" @submit.prevent="handleSubmit" novalidate>
 

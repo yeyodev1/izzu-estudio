@@ -1,174 +1,148 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+/**
+ * SocialProofToast.vue
+ *
+ * Toast cíclico de prueba social: muestra registros recientes a la lista VIP.
+ * Nombres parcialmente anonimizados con bullets · ubicación general.
+ * Ciclo: 5s visible + 2s gap = 7s total.
+ */
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
-const LEADS = [
-  { name: 'Ma••••••• R••••', city: 'Quito' },
-  { name: 'Pa••••• M•••••', city: 'Guayaquil' },
-  { name: 'Ca••••••• V•••', city: 'Cuenca' },
-  { name: 'An••••• L•••••', city: 'Quito' },
-  { name: 'Va••••••• G•••', city: 'Quito' },
-  { name: 'Da••••• R•••••', city: 'Guayaquil' },
-  { name: 'So••••• H•••••', city: 'Ambato' },
-  { name: 'Na••••••• C•••', city: 'Loja' },
-  { name: 'Lu••••• M•••••', city: 'Quito' },
-  { name: 'Ga••••••• P•••', city: 'Manta' },
-  { name: 'Is•••••• T•••••', city: 'Guayaquil' },
-  { name: 'Ve••••••• A•••', city: 'Ibarra' },
+interface ProofItem {
+  name: string
+  city: string
+  ago: string
+}
+
+const items: ProofItem[] = [
+  { name: 'Ma••••• R•••', city: 'Quito · Ecuador', ago: 'hace 2 min' },
+  { name: 'Pa••• M•••••', city: 'Guayaquil · Ecuador', ago: 'hace 4 min' },
+  { name: 'Ca••••• V••', city: 'Bogotá · Colombia', ago: 'hace 6 min' },
+  { name: 'An••• L••••', city: 'Lima · Perú', ago: 'hace 8 min' },
+  { name: 'Va••••• G••', city: 'Cuenca · Ecuador', ago: 'hace 11 min' },
+  { name: 'Da••• R••••', city: 'Miami · USA', ago: 'hace 13 min' },
+  { name: 'So••• H••••', city: 'Madrid · España', ago: 'hace 15 min' },
+  { name: 'Na••••• C••', city: 'Santiago · Chile', ago: 'hace 18 min' },
+  { name: 'Lu••• M••••', city: 'CDMX · México', ago: 'hace 21 min' },
+  { name: 'Ga••••• P••', city: 'Manta · Ecuador', ago: 'hace 24 min' },
+  { name: 'Is•••• T••••', city: 'Buenos Aires · Argentina', ago: 'hace 28 min' },
+  { name: 'Ve••••• A••', city: 'Loja · Ecuador', ago: 'hace 32 min' },
 ]
 
-const TIMES = ['Hace un momento', 'Hace 2 minutos', 'Hace 5 minutos', 'Hace 3 minutos', 'Hace 1 minuto']
-
+const route = useRoute()
 const visible = ref(false)
-const current = ref(LEADS[0])
-const timeAgo = ref(TIMES[0])
+const idx = ref(0)
+const current = ref<ProofItem>(items[0])
 
-let showTimer: ReturnType<typeof setTimeout>
-let hideTimer: ReturnType<typeof setTimeout>
-let idx = 0
+let cycleTimer: ReturnType<typeof setTimeout> | null = null
 
-function showNext() {
-  idx = (idx + 1) % LEADS.length
-  current.value = LEADS[idx]
-  timeAgo.value = TIMES[Math.floor(Math.random() * TIMES.length)]
+const showNext = () => {
+  current.value = items[idx.value % items.length]
+  idx.value += 1
   visible.value = true
-
-  hideTimer = setTimeout(() => {
+  cycleTimer = setTimeout(() => {
     visible.value = false
-    showTimer = setTimeout(showNext, 2000)
+    cycleTimer = setTimeout(showNext, 2000)
   }, 5000)
 }
 
 onMounted(() => {
-  showTimer = setTimeout(showNext, 3000)
+  cycleTimer = setTimeout(showNext, 4000)
 })
 
-onUnmounted(() => {
-  clearTimeout(showTimer)
-  clearTimeout(hideTimer)
+onBeforeUnmount(() => {
+  if (cycleTimer) clearTimeout(cycleTimer)
 })
+
+const shouldShow = () => route.name === 'funnel'
 </script>
 
 <template>
-  <Transition name="toast">
-    <div v-if="visible" class="sp-toast" role="status" aria-live="polite">
-      <div class="sp-toast__avatar" aria-hidden="true">
-        <i class="fa-solid fa-user"></i>
-      </div>
-      <div class="sp-toast__body">
-        <p class="sp-toast__action">
-          <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
-          Acaba de agendar su sesión
+  <Transition name="proof-fade">
+    <aside
+      v-if="visible && shouldShow()"
+      class="proof"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="proof__icon" aria-hidden="true">
+        <i class="fa-solid fa-check" />
+      </span>
+      <div class="proof__body">
+        <p class="proof__line">
+          <strong>{{ current.name }}</strong> se registró a la lista VIP
         </p>
-        <p class="sp-toast__name">{{ current.name }} · {{ current.city }} aseguró su lugar</p>
-        <p class="sp-toast__time">{{ timeAgo }}</p>
+        <p class="proof__meta">
+          {{ current.city }} · {{ current.ago }}
+        </p>
       </div>
-      <button class="sp-toast__close" @click="visible = false" aria-label="Cerrar">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
+    </aside>
   </Transition>
 </template>
 
 <style lang="scss" scoped>
-@use '@/styles/fonts.modules.scss' as fonts;
-@use '@/styles/colorVariables.module.scss' as colors;
-
-.sp-toast {
+.proof {
   position: fixed;
-  bottom: 1.5rem;
+  bottom: 1.25rem;
   left: 1.25rem;
-  z-index: 9999;
   display: flex;
-  align-items: flex-start;
   gap: 0.75rem;
+  align-items: center;
   background: #ffffff;
-  border: 1px solid #D1FAE5;
-  border-left: 4px solid colors.$LPB-PINK;
-  border-radius: 14px;
-  padding: 0.85rem 1rem 0.85rem 0.9rem;
-  max-width: 300px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(22, 199, 132, 0.1);
-  cursor: default;
+  color: #0d1117;
+  border: 1px solid #e5e9ec;
+  padding: 0.75rem 1rem;
+  border-radius: 0.85rem;
+  box-shadow: 0 14px 32px rgba(13, 17, 23, 0.16);
+  z-index: 6000;
+  max-width: calc(100vw - 2.5rem);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
 
-  @media (max-width: 420px) {
-    max-width: calc(100vw - 2rem);
-    bottom: 1rem;
-    left: 1rem;
+.proof__icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #16c784;
+  color: #0d1117;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+}
+
+.proof__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.proof__line {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
+
+  strong {
+    font-weight: 700;
+    color: #0a9e68;
   }
 }
 
-.sp-toast__avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, colors.$LPB-PINK, colors.$LPB-PURPLE);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  i { color: #ffffff; font-size: 0.85rem; }
-}
-
-.sp-toast__body {
-  flex: 1;
-  min-width: 0;
-}
-
-.sp-toast__action {
-  font-family: fonts.$font-interface;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: colors.$LPB-PINK;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 0.2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  i { font-size: 0.68rem; }
-}
-
-.sp-toast__name {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: colors.$LPB-DARK;
-  margin: 0 0 0.15rem;
-  line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sp-toast__time {
-  font-size: 0.72rem;
-  color: #A0B0C5;
+.proof__meta {
   margin: 0;
+  font-size: 0.78rem;
+  color: #6b7280;
 }
 
-.sp-toast__close {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: #C0D0E0;
-  font-size: 0.8rem;
-  flex-shrink: 0;
-  margin-top: 1px;
-  transition: color 0.15s;
-  &:hover { color: colors.$LPB-DARK; }
+.proof-fade-enter-active,
+.proof-fade-leave-active {
+  transition: opacity 280ms ease, transform 280ms ease;
 }
 
-// ── Transition ────────────────────────────────────────────────────────────────
-.toast-enter-active { animation: toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.toast-leave-active { animation: toast-out 0.3s ease forwards; }
-
-@keyframes toast-in {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes toast-out {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to   { opacity: 0; transform: translateY(10px) scale(0.97); }
+.proof-fade-enter-from,
+.proof-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 </style>

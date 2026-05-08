@@ -1,315 +1,174 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-
-const hoursLeft = ref(0)
-
-onMounted(() => {
-  const osDisqAt = localStorage.getItem('lpb_disq_at')
-  if (osDisqAt) {
-    const elapsed = Date.now() - Number(osDisqAt)
-    const remaining = 24 * 60 * 60 * 1000 - elapsed
-    if (remaining > 0) {
-      hoursLeft.value = Math.ceil(remaining / (60 * 60 * 1000))
-    }
-  }
-})
+/**
+ * NoSpaceView.vue — /sin-cupo
+ *
+ * Página de rechazo empático cuando no califica en QualifyModal.
+ * Mantiene cooldown 24h y deriva al usuario a Instagram.
+ */
 </script>
 
 <template>
-  <div class="nospace">
+  <main class="ns">
+    <section class="ns__container">
+      <span class="ns__icon" aria-hidden="true">
+        <i class="fa-solid fa-heart" />
+      </span>
 
-    <!-- TOP BAR -->
-    <header class="nospace__topbar">
-      <h2 class="nospace__logo-text">LUISA PITA BEJARANO</h2>
-    </header>
+      <h1 class="ns__title">Esta cohorte no es para ti — y está bien.</h1>
 
-    <main class="nospace__main">
+      <p class="ns__lead">
+        La comunidad anual de Luisa Pita Bejarano está hecha para mujeres que pueden invertir
+        <strong>capital tres cifras</strong> y comprometerse <strong>un año entero</strong>.
+        Si hoy no es tu momento, no fuerces algo que no calza con tu vida real.
+      </p>
 
-      <!-- Cooldown notice -->
-      <div v-if="hoursLeft > 0" class="nospace__cooldown" role="alert">
-        <i class="fa-solid fa-clock" aria-hidden="true"></i>
-        Podrás solicitar una nueva consulta en
-        <strong>{{ hoursLeft }} hora{{ hoursLeft !== 1 ? 's' : '' }}</strong>
-      </div>
-
-      <!-- Main message -->
-      <div class="nospace__card">
-        <div class="nospace__icon-wrap" aria-hidden="true">
-          <i class="fa-solid fa-calendar-xmark nospace__icon"></i>
-        </div>
-        <h1 class="nospace__title">Cupos para este ciclo llenos</h1>
-        <p class="nospace__subtitle">
-          El programa trabaja con grupos limitados para garantizar resultados reales.
-          En este momento los cupos del ciclo actual están completos.
+      <div class="ns__card">
+        <h2>Mientras tanto, no te quedes lejos.</h2>
+        <p>
+          Sigue el trabajo de Luisa en Instagram. Ahí compartirá rutinas, reflexiones y novedades de la
+          comunidad. Cuando sientas que es tu momento, vuelves y aplicas a la próxima cohorte.
         </p>
+        <a
+          href="https://www.instagram.com/luisapitabejarano/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ns__link"
+        >
+          <i class="fa-brands fa-instagram" aria-hidden="true" />
+          Seguir a @luisapitabejarano
+        </a>
       </div>
 
-      <!-- Next steps -->
-      <div class="nospace__steps">
-        <p class="nospace__steps-title">¿Qué puedes hacer ahora?</p>
-        <ul class="nospace__steps-list" role="list">
-          <li>
-            <div class="nospace__step-icon" aria-hidden="true">
-              <i class="fa-solid fa-envelope"></i>
-            </div>
-            <div>
-              <strong>Revisa tu email</strong>
-              <p>Te notificaremos cuando abra el próximo ciclo del programa.</p>
-            </div>
-          </li>
-          <li>
-            <div class="nospace__step-icon" aria-hidden="true">
-              <i class="fa-brands fa-whatsapp"></i>
-            </div>
-            <div>
-              <strong>¿Empezar ya?</strong>
-              <p>Si no puedes esperar, escríbenos por WhatsApp y evaluamos si hay forma de incluirte en el ciclo actual.</p>
-            </div>
-          </li>
-        </ul>
-      </div>
+      <p class="ns__small">
+        Podrás volver a registrarte después de 24 horas si tu situación cambia.
+      </p>
 
-      <!-- Teaser -->
-      <div class="nospace__teaser">
-        <div class="nospace__teaser-badge">
-          <i class="fa-solid fa-fire-flame-curved" aria-hidden="true"></i>
-          Próximo ciclo
-        </div>
-        <h2 class="nospace__teaser-title">Programa Baja 8 en 8 — siguiente grupo</h2>
-        <p class="nospace__teaser-body">
-          El próximo ciclo abre pronto. Estás en lista de espera — serás la primera en enterarte
-          cuando los cupos estén disponibles.
-        </p>
-      </div>
-
-      <div class="nospace__back">
-        <RouterLink to="/" class="nospace__back-link">
-          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-          Volver al inicio
-        </RouterLink>
-      </div>
-
-    </main>
-
-    <footer class="nospace__footer">
-      <nav class="nospace__footer-links" aria-label="Legal">
-        <RouterLink to="/politicas-privacidad">Política de Privacidad</RouterLink>
-        <RouterLink to="/aviso-legal">Aviso Legal</RouterLink>
+      <nav class="ns__legal">
+        <RouterLink to="/politicas-privacidad">Privacidad</RouterLink>
+        <RouterLink to="/aviso-legal">Aviso legal</RouterLink>
       </nav>
-      <p class="nospace__footer-copy">© {{ new Date().getFullYear() }} LUISA PITA BEJARANO. Todos los derechos reservados.</p>
-    </footer>
-
-  </div>
+    </section>
+  </main>
 </template>
 
 <style lang="scss" scoped>
-@use '@/styles/fonts.modules.scss' as fonts;
-@use '@/styles/colorVariables.module.scss' as colors;
-
-.nospace {
+.ns {
   min-height: 100vh;
-  background: #ffffff;
-  color: colors.$OS-DARK;
-  display: flex;
-  flex-direction: column;
+  background: linear-gradient(180deg, #f5fffa 0%, #ffffff 100%);
+  display: grid;
+  place-items: center;
+  padding: 3rem 1.5rem;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  color: #0d1117;
 }
 
-.nospace__topbar {
-  background: #ffffff;
-  border-bottom: 1px solid #E8EDF5;
-  padding: 0.9rem 1.5rem;
-  display: flex;
-  justify-content: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
-}
-
-.nospace__logo { height: 36px; width: auto; object-fit: contain; }
-
-.nospace__main {
-  flex: 1;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+.ns__container {
+  max-width: 640px;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.nospace__cooldown {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  background: rgba(colors.$OS-BLUE, 0.06);
-  border: 1px solid rgba(colors.$OS-BLUE, 0.2);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  font-size: 0.84rem;
-  color: colors.$OS-NAVY;
-  i { color: colors.$OS-BLUE; flex-shrink: 0; }
-  strong { font-weight: 700; }
-}
-
-.nospace__card {
-  background: #F9FBFF;
-  border: 1px solid #E4EDF7;
-  border-radius: 20px;
-  padding: 2.5rem 2rem;
   text-align: center;
-}
-
-.nospace__icon-wrap {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: rgba(colors.$OS-RED, 0.07);
-  border: 1.5px solid rgba(colors.$OS-RED, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1.25rem;
-}
-
-.nospace__icon {
-  font-size: 2.4rem;
-  color: rgba(colors.$OS-RED, 0.7);
-  line-height: 1;
-}
-
-.nospace__title {
-  @include fonts.heading-font(800);
-  font-size: 1.5rem;
-  color: colors.$OS-DARK;
-  margin: 0 0 0.75rem;
-  letter-spacing: -0.02em;
-}
-
-.nospace__subtitle {
-  font-size: 0.9rem;
-  color: #4A5F7A;
-  line-height: 1.6;
-  margin: 0 auto;
-  max-width: 420px;
-}
-
-.nospace__steps {
-  background: #F5F8FF;
-  border: 1px solid #E4EDF7;
-  border-radius: 16px;
-  padding: 1.5rem 1.75rem;
-}
-
-.nospace__steps-title {
-  font-family: fonts.$font-interface;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: colors.$OS-NAVY;
-  margin: 0 0 1rem;
-}
-
-.nospace__steps-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-
-  li {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-    strong { display: block; font-size: 0.9rem; color: colors.$OS-DARK; margin-bottom: 0.2rem; }
-    p { font-size: 0.83rem; color: #4A5F7A; line-height: 1.5; margin: 0; }
-  }
-}
-
-.nospace__step-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: colors.$OS-NAVY;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  i { color: #ffffff; font-size: 1rem; }
 }
 
-.nospace__teaser {
-  background: #F9FBFF;
-  border: 1.5px solid rgba(colors.$OS-NAVY, 0.15);
-  border-radius: 16px;
-  padding: 1.75rem;
-  box-shadow: 0 4px 20px rgba(0, 63, 125, 0.06);
-}
-
-.nospace__teaser-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.28rem 0.75rem;
+.ns__icon {
+  width: 4rem;
+  height: 4rem;
   border-radius: 999px;
-  background: rgba(colors.$OS-NAVY, 0.07);
-  border: 1px solid rgba(colors.$OS-NAVY, 0.18);
-  font-family: fonts.$font-interface;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: colors.$OS-NAVY;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  margin-bottom: 0.85rem;
-  i { font-size: 0.68rem; }
+  display: grid;
+  place-items: center;
+  background: #16c784;
+  color: #0d1117;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.nospace__teaser-title {
-  @include fonts.heading-font(700);
-  font-size: 1.05rem;
-  color: colors.$OS-DARK;
-  margin: 0 0 0.5rem;
+.ns__title {
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  margin: 0;
+  line-height: 1.15;
 }
 
-.nospace__teaser-body {
-  font-size: 0.85rem;
-  color: #4A5F7A;
+.ns__lead {
+  font-size: 1rem;
+  color: #41484f;
   line-height: 1.6;
   margin: 0;
+
+  strong {
+    color: #0d1117;
+    font-weight: 700;
+  }
 }
 
-.nospace__back { display: flex; justify-content: center; }
+.ns__card {
+  margin-top: 1rem;
+  background: #ffffff;
+  border: 1.5px solid #e5e9ec;
+  border-radius: 1.25rem;
+  padding: 1.75rem 1.5rem;
+  text-align: left;
 
-.nospace__back-link {
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 0 0 0.5rem;
+    text-align: center;
+  }
+
+  p {
+    color: #4b5563;
+    margin: 0 0 1.25rem;
+    line-height: 1.55;
+    text-align: center;
+  }
+}
+
+.ns__link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.86rem;
-  color: colors.$OS-NAVY;
+  gap: 0.55rem;
+  background: #0d1117;
+  color: #16c784;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
   text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-  &:hover { color: colors.$OS-BLUE; }
-  i { font-size: 0.78rem; }
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  margin: 0 auto;
+  width: max-content;
+  transition: background 160ms ease, color 160ms ease;
+
+  &:hover {
+    background: #16c784;
+    color: #0d1117;
+  }
 }
 
-.nospace__footer {
-  padding: 1.5rem;
-  border-top: 1px solid #F0F4FB;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  text-align: center;
+.ns__small {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
 
-  &-links {
-    display: flex;
-    gap: 1.5rem;
-    a { font-size: 0.76rem; color: #B0C0D5; text-decoration: none; &:hover { color: colors.$OS-NAVY; } }
+.ns__legal {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+
+  a {
+    color: #4b5563;
+    text-decoration: none;
+
+    &:hover {
+      color: #0a9e68;
+      text-decoration: underline;
+    }
   }
-  &-copy { font-size: 0.72rem; color: #C8D8ED; margin: 0; }
 }
 </style>
