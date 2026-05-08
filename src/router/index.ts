@@ -161,14 +161,31 @@ const isLocalhost = () => {
   return h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.endsWith('.local')
 }
 
+// Páginas que requieren haber dejado contacto antes (lpb_contact en localStorage).
+// Las páginas legales siempre son públicas. La home (`funnel`) es el único punto de entrada.
+const PROTECTED_ROUTES = new Set(['vip-confirmed', 'no-space'])
+const PUBLIC_ROUTES = new Set(['funnel', 'privacy-policy', 'legal-notice'])
+
 router.beforeEach((to, _from, next) => {
   if (isLocalhost()) return next()
 
+  const hasContact = !!localStorage.getItem('lpb_contact')
   const disqAt = Number(localStorage.getItem('lpb_disq_at') ?? '0')
   const isDisqualified = disqAt && Date.now() - disqAt < COOLDOWN_MS
+  const routeName = to.name as string | undefined
 
-  // Si está descalificado y reintenta entrar al funnel, lo mandamos al rechazo.
-  if (isDisqualified && to.name === 'funnel') {
+  // Páginas protegidas: solo accesibles si ya dejó contacto.
+  if (routeName && PROTECTED_ROUTES.has(routeName) && !hasContact) {
+    return next({ name: 'funnel' })
+  }
+
+  // Cualquier ruta no listada explícitamente: cierra todo y manda al funnel.
+  if (routeName && !PROTECTED_ROUTES.has(routeName) && !PUBLIC_ROUTES.has(routeName)) {
+    return next({ name: 'funnel' })
+  }
+
+  // Si fue descalificado en cooldown y reintenta entrar al funnel, lo mandamos al rechazo.
+  if (isDisqualified && routeName === 'funnel') {
     return next({ name: 'no-space' })
   }
 
