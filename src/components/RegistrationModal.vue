@@ -165,7 +165,7 @@ const handleSubmit = async () => {
     event_id: leadEventId,
     step: 1,
     stepName: 'contacto',
-    nota: 'Paso 1 - Contacto inicial preventa Comunidad Anual Luisa Pita. Lead capturó datos básicos, pendiente calificación VIP.',
+    nota: '📝 Paso 1 - Contacto inicial 🚀 preventa Comunidad Anual Luisa Pita 💪. Lead capturó datos básicos ✅, pendiente calificación VIP ⏳.',
     tags: ['paso-1-contacto', 'preventa-comunidad-anual', 'luisa-pita-web', 'lead-sin-calificar'],
     etiquetas: 'paso-1-contacto, preventa-comunidad-anual, luisa-pita-web, lead-sin-calificar',
     ...getStoredFbParams(),

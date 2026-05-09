@@ -98,8 +98,8 @@ const sendQualificationWebhook = async (calificada: boolean) => {
   const etiquetas = baseTags.join(', ')
 
   const nota = calificada
-    ? `Paso 2 - CALIFICÓ VIP. Capital tres cifras: SI. Compromiso 1 año: SI. Perfil: ${profile.value}. Instagram: ${normalizedInstagram.value || 'no proporcionado'}. Enviar aviso 24h antes de apertura + código de descuento exclusivo.`
-    : `Paso 2 - NO CALIFICÓ. Capital tres cifras: ${capital.value.toUpperCase()}. Compromiso 1 año: ${compromiso.value.toUpperCase()}. Perfil: ${profile.value}. Instagram: ${normalizedInstagram.value || 'no proporcionado'}. Cooldown 48h activo, redirigida a IG @luisapitabejarano.`
+    ? `🎯 Paso 2 - ✅ CALIFICÓ VIP 🌟. 💰 Capital tres cifras: SI. 📅 Compromiso 1 año: SI. 👩‍💼 Perfil: ${profile.value}. 📸 Instagram: ${normalizedInstagram.value || 'no proporcionado'}. 🚨 Enviar aviso 24h antes de apertura ⏰ + 🎁 código de descuento exclusivo.`
+    : `🎯 Paso 2 - ❌ NO CALIFICÓ. 💰 Capital tres cifras: ${capital.value.toUpperCase()}. 📅 Compromiso 1 año: ${compromiso.value.toUpperCase()}. 👩‍💼 Perfil: ${profile.value}. 📸 Instagram: ${normalizedInstagram.value || 'no proporcionado'}. ⏳ Cooldown 48h activo, redirigida a IG @luisapitabejarano 👋.`
 
   try {
     await fetch(url, {
