@@ -98,14 +98,18 @@ const VALOR_LABEL: Record<string, string> = {
   '+200k': '💎 Más de $200,000',
 }
 
-const sendQualificationWebhook = async () => {
+// Regla de calificación: valor >= 50k. Caso bajo (<50k) descalifica.
+const calculaCalifica = (val: Valor | ''): boolean => val === '50k-200k' || val === '+200k'
+
+const sendQualificationWebhook = async (califica: boolean) => {
   const url = import.meta.env.VITE_WEBHOOK_CALIFICACION
   if (!url || !props.lead) return
 
   const baseTags = [
     'paso-3-calificacion',
     'izzu-diagnostico',
-    'lead-calificado',
+    califica ? 'lead-calificado' : 'lead-descalificado',
+    `califica-${califica}`,
     `situacion-${situacion.value}`,
     `inmueble-${inmueble.value}`,
     `valor-${valor.value}`,
@@ -114,11 +118,22 @@ const sendQualificationWebhook = async () => {
 
   const nombreFull = `${props.lead.nombre} ${props.lead.apellido}`.trim()
 
+  const tituloNota = califica
+    ? '✅ *Lead CALIFICADO — listo para agendar diagnóstico*'
+    : '⛔ *Lead NO CALIFICA — descartado por valor del inmueble*'
+  const estadoNota = califica
+    ? '🎯 *Estado:* Lead aprobado · Coordinar llamada de 20 min'
+    : '🚫 *Estado:* Lead descalificado · Cooldown 24h activado'
+  const accionNota = califica
+    ? '🚀 *Acción:* Contactar por WhatsApp para coordinar día/hora de diagnóstico técnico-legal gratuito (20 min).'
+    : '🛑 *Acción:* No contactar. Caso fuera de alcance económico. Considerar nurturing por Instagram (@izzuestudio).'
+
   const nota = [
-    '✅ *Lead CALIFICADO — listo para agendar diagnóstico*',
+    tituloNota,
     '',
     '📍 *Paso 3 / 3* — Calificación completa',
-    '🎯 *Estado:* Lead aprobado · Coordinar llamada de 20 min',
+    estadoNota,
+    `🏷️ *califica:* ${califica ? 'true ✅' : 'false ❌'}`,
     '',
     `👤 *Nombre:* ${nombreFull}`,
     `✉️ *Email:* ${props.lead.email}`,
@@ -135,7 +150,7 @@ const sendQualificationWebhook = async () => {
     `🆔 *Event ID:* ${props.lead.eventId}_qual`,
     `🕒 *Timestamp:* ${new Date().toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}`,
     '',
-    '🚀 *Acción:* Contactar por WhatsApp para coordinar día/hora de diagnóstico técnico-legal gratuito (20 min).',
+    accionNota,
   ].join('\n')
 
   try {
@@ -151,11 +166,15 @@ const sendQualificationWebhook = async () => {
         inmuebleLabel: INMUEBLE_LABEL[inmueble.value] ?? inmueble.value,
         valor: valor.value,
         valorLabel: VALOR_LABEL[valor.value] ?? valor.value,
+        califica,
+        calificaTexto: califica ? 'true' : 'false',
+        califica_bool: califica,
+        qualifies: califica,
         timestamp: new Date().toISOString(),
         source: 'izzu-estudio-web',
         step: 3,
         stepName: 'calificacion',
-        estado: 'lead-calificado',
+        estado: califica ? 'lead-calificado' : 'lead-descalificado',
         tags: baseTags,
         etiquetas: baseTags.join(', '),
         nota,
@@ -170,7 +189,9 @@ const submit = async () => {
   if (!isValid.value || submitting.value) return
   submitting.value = true
 
-  await sendQualificationWebhook()
+  const califica = calculaCalifica(valor.value as Valor)
+
+  await sendQualificationWebhook(califica)
 
   if (props.lead) {
     trackCompleteRegistration({
@@ -184,8 +205,11 @@ const submit = async () => {
         externalId: props.lead.email,
       },
       custom: {
-        content_name: 'IZZU Estudio - Diagnóstico Calificado',
-        content_category: 'diagnostico-calificado',
+        content_name: califica
+          ? 'IZZU Estudio - Diagnóstico Calificado'
+          : 'IZZU Estudio - Diagnóstico Descalificado',
+        content_category: califica ? 'diagnostico-calificado' : 'diagnostico-descalificado',
+        califica,
         situacion: situacion.value,
         inmueble: inmueble.value,
         valor: valor.value,
@@ -193,8 +217,12 @@ const submit = async () => {
     })
   }
 
+  if (!califica) {
+    try { localStorage.setItem('izzu_disq_at', String(Date.now())) } catch { /* ignore */ }
+  }
+
   emit('close')
-  router.push({ name: 'session-booked' })
+  router.push({ name: califica ? 'session-booked' : 'no-space' })
 }
 </script>
 
