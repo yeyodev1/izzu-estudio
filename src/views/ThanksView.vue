@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import IzzuHeader from '@/components/IzzuHeader.vue'
 
 const contactName = ref<string>('')
-const wasQualified = ref<boolean>(false)
-const wasDisq = ref<boolean>(false)
+const isDisq = ref(false)
 
 onMounted(() => {
   try {
@@ -14,24 +13,8 @@ onMounted(() => {
       if (data?.nombre) contactName.value = data.nombre.split(' ')[0]
     }
   } catch { /* ignore */ }
-  wasQualified.value = localStorage.getItem('izzu_qualified') === '1'
-  wasDisq.value = !!Number(localStorage.getItem('izzu_disq_at') ?? '0')
+  isDisq.value = !!Number(localStorage.getItem('izzu_disq_at') ?? '0')
 })
-
-const title = computed(() => {
-  if (wasQualified.value) return contactName.value
-    ? `¡Listo, ${contactName.value}!`
-    : '¡Listo!'
-  return contactName.value
-    ? `Gracias, ${contactName.value}.`
-    : 'Gracias por tu interés.'
-})
-
-const subtitle = computed(() =>
-  wasQualified.value
-    ? 'Recibimos tu reserva. Te enviaremos la confirmación al correo y WhatsApp registrados.'
-    : 'Este diagnóstico está diseñado para casos específicos de regularización. Por ahora tu propiedad no encaja con nuestros servicios — y está bien.',
-)
 </script>
 
 <template>
@@ -39,28 +22,17 @@ const subtitle = computed(() =>
   <main class="izthk">
     <section class="izthk__container">
       <span class="izthk__icon">
-        <i v-if="wasQualified" class="fa-solid fa-circle-check" />
-        <i v-else class="fa-solid fa-compass" />
+        <i class="fa-solid fa-hand-peace" />
       </span>
 
-      <h1 class="izthk__title">{{ title }}</h1>
-      <p class="izthk__sub">{{ subtitle }}</p>
-
-      <div v-if="wasQualified" class="izthk__card">
-        <h2><i class="fa-solid fa-calendar-check" /> Próximos pasos</h2>
-        <ul>
-          <li><strong>1.</strong> Revisa tu correo y WhatsApp. Te llegará la confirmación con los detalles de la sesión.</li>
-          <li><strong>2.</strong> Si tienes escrituras o documentos catastrales, ten a mano una copia digital.</li>
-          <li><strong>3.</strong> Llegada la fecha, te llamamos / te conectamos para la sesión de 20 minutos.</li>
-        </ul>
-      </div>
-
-      <div v-else class="izthk__card">
-        <h2><i class="fa-solid fa-instagram" /> Mientras tanto, no te quedes lejos</h2>
-        <p>
-          Sigue el trabajo de IZZU en Instagram. Ahí compartimos contenido sobre regularización,
-          propiedad horizontal y blindaje patrimonial. Cuando tengas una propiedad con encaje,
-          vuelves y agendas tu diagnóstico.
+      <template v-if="isDisq">
+        <h1 class="izthk__title">
+          Gracias por tu registro<template v-if="contactName">, {{ contactName }}</template>
+        </h1>
+        <p class="izthk__sub">
+          Hemos recibido tu información. Por ahora este diagnóstico está enfocado en casos específicos
+          de regularización patrimonial. Te invitamos a seguir a IZZU en Instagram para contenido
+          sobre el tema. Cuando tengas una propiedad con el perfil adecuado, vuelve a agendar.
         </p>
         <a
           href="https://www.instagram.com/izzuestudio/"
@@ -70,7 +42,24 @@ const subtitle = computed(() =>
         >
           <i class="fa-brands fa-instagram" /> Seguir @izzuestudio
         </a>
-      </div>
+      </template>
+
+      <template v-else>
+        <h1 class="izthk__title">
+          ¡Listo<template v-if="contactName">, {{ contactName }}</template>!
+        </h1>
+        <p class="izthk__sub">
+          Recibimos tu reserva. Te enviaremos la confirmación al correo y WhatsApp registrados.
+        </p>
+        <div class="izthk__card">
+          <h2><i class="fa-solid fa-calendar-check" /> Próximos pasos</h2>
+          <ul>
+            <li><strong>1.</strong> Revisa tu correo y WhatsApp. Te llegará la confirmación con los detalles de la sesión.</li>
+            <li><strong>2.</strong> Si tienes escrituras o documentos catastrales, ten a mano una copia digital.</li>
+            <li><strong>3.</strong> Llegada la fecha, te llamamos / te conectamos para la sesión de 20 minutos.</li>
+          </ul>
+        </div>
+      </template>
 
       <nav class="izthk__legal">
         <RouterLink to="/politicas-privacidad">Privacidad</RouterLink>

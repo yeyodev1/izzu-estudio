@@ -156,7 +156,7 @@ router.afterEach((to) => {
 })
 
 // ── Guards ────────────────────────────────────────────────────────────
-const COOLDOWN_MS = 24 * 60 * 60 * 1000
+const COOLDOWN_MS = 48 * 60 * 60 * 1000
 
 const isLocalhost = () => {
   if (typeof window === 'undefined') return false

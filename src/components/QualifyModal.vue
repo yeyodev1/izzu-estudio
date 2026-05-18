@@ -127,6 +127,7 @@ const handleSubmit = async () => {
     router.push({ name: 'booking' })
   } else {
     localStorage.setItem('izzu_disq_at', String(Date.now()))
+    localStorage.removeItem('izzu_qualified')
     router.push({ name: 'thanks' })
   }
 }
