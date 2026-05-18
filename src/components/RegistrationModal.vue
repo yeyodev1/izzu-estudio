@@ -26,7 +26,6 @@ interface Country { code: string; name: string; dial: string; flag: string }
 const flagEmoji = (code: string) =>
   [...code.toUpperCase()].map(c => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0))).join('')
 
-// Lista curada: LATAM primero, luego resto
 const PRIORITY = ['EC', 'CO', 'PE', 'MX', 'AR', 'CL', 'VE', 'BO', 'PY', 'UY', 'GT', 'HN', 'SV', 'CR', 'PA', 'DO', 'CU', 'US', 'ES']
 
 const nameMap: Record<string, string> = {
@@ -73,7 +72,6 @@ const form = ref({
 const errors = ref<Record<string, string>>({})
 const touched = ref<Record<string, boolean>>({})
 
-// ── Phone formatter (AsYouType) ───────────────────────────────────────────────
 const formattedPhone = computed(() => {
   if (!form.value.phone) return ''
   const formatter = new AsYouType(selectedCountry.value.code as any)
@@ -92,7 +90,6 @@ const parsedPhoneE164 = computed(() => {
   return parsed?.format('E.164') ?? ''
 })
 
-// ── Validaciones ──────────────────────────────────────────────────────────────
 const validators: Record<string, (v: string) => string | null> = {
   nombre: v => v.trim().length < 2 ? 'Ingresa tu nombre' : null,
   apellido: v => v.trim().length < 2 ? 'Ingresa tu apellido' : null,
@@ -122,7 +119,6 @@ const onPhoneInput = (e: Event) => {
   form.value.phone = raw
 }
 
-// ── Dropdown de país ──────────────────────────────────────────────────────────
 const filteredCountries = computed(() => {
   const q = countrySearch.value.toLowerCase()
   if (!q) return countries
@@ -144,47 +140,87 @@ const handleClickOutside = (e: MouseEvent) => {
   if (el && !el.contains(e.target as Node)) dropdownOpen.value = false
 }
 
-// ── Submit ────────────────────────────────────────────────────────────────────
 const handleSubmit = async () => {
   touched.value = { nombre: true, apellido: true, email: true, phone: true }
   if (!validate()) return
 
   submitting.value = true
 
-  // event_id compartido entre Pixel y CAPI para deduplicación
   const leadEventId = `lead_${Date.now()}_${Math.random().toString(36).slice(2)}`
+
+  const nombreFull = form.value.nombre.trim() + ' ' + form.value.apellido.trim()
+  const emailLower = form.value.email.trim().toLowerCase()
+  const telefonoE164 = parsedPhoneE164.value
+  const telefonoFmt = selectedCountry.value.dial + ' ' + formattedPhone.value
+  const paisNombre = selectedCountry.value.name
+  const paisFlag = selectedCountry.value.flag
+  const paisCode = selectedCountry.value.code
+
+  const tags = [
+    'paso-1-contacto',
+    'izzu-estudio-web',
+    'diagnostico-arquitectonico',
+    'lead-sin-calificar',
+    `pais-${paisCode.toLowerCase()}`,
+    'fuente-web-funnel',
+  ]
+
+  const nota = [
+    '🏗️ *Nuevo lead IZZU Estudio de Arquitectura*',
+    '',
+    '📍 *Paso 1 / 3* — Contacto inicial capturado',
+    '⏳ *Estado:* Pendiente de calificación',
+    '',
+    `👤 *Nombre:* ${nombreFull}`,
+    `✉️ *Email:* ${emailLower}`,
+    `📱 *WhatsApp:* ${telefonoE164}`,
+    `${paisFlag} *País:* ${paisNombre} (${paisCode})`,
+    '',
+    `🆔 *Event ID:* ${leadEventId}`,
+    `🕒 *Timestamp:* ${new Date().toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}`,
+    '',
+    '🎯 *Próximo paso:* Lead debe ver video + aceptar términos + responder 3 preguntas de calificación para agendar diagnóstico técnico-legal gratuito.',
+    '',
+    '💼 *Interés:* Regularización / División / Propiedad Horizontal / Urbanismo',
+  ].join('\n')
 
   const payload = {
     nombre: form.value.nombre.trim(),
     apellido: form.value.apellido.trim(),
-    email: form.value.email.trim().toLowerCase(),
-    telefono: parsedPhoneE164.value,
-    telefonoDisplay: selectedCountry.value.dial + ' ' + formattedPhone.value,
-    pais: selectedCountry.value.name,
+    nombreCompleto: nombreFull,
+    email: emailLower,
+    telefono: telefonoE164,
+    telefonoDisplay: telefonoFmt,
+    pais: paisNombre,
+    paisCode,
+    paisFlag,
     timestamp: new Date().toISOString(),
     event_id: leadEventId,
     step: 1,
     stepName: 'contacto',
-    nota: '📝 Paso 1 - Contacto inicial 🚀 preventa Comunidad Anual Luisa Pita 💪. Lead capturó datos básicos ✅, pendiente calificación VIP ⏳.',
-    tags: ['paso-1-contacto', 'preventa-comunidad-anual', 'luisa-pita-web', 'lead-sin-calificar'],
-    etiquetas: 'paso-1-contacto, preventa-comunidad-anual, luisa-pita-web, lead-sin-calificar',
+    estado: 'lead-sin-calificar',
+    nota,
+    notas: nota,
+    note: nota,
+    tags,
+    etiquetas: tags.join(', '),
+    source: 'izzu-estudio-web',
+    landingUrl: typeof window !== 'undefined' ? window.location.href : '',
+    referrer: typeof document !== 'undefined' ? document.referrer : '',
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
     ...getStoredFbParams(),
   }
 
-  console.info('[LuisaPita Registro]', payload)
+  console.info('[IZZU Registro]', payload)
 
   await fetch(import.meta.env.VITE_WEBHOOK_REGISTRO, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...payload,
-      source: 'luisa-pita-web',
-    }),
+    body: JSON.stringify(payload),
   }).catch(() => {})
 
-  // Meta Pixel — evento Lead (deduplicado con CAPI via event_id)
   ;(window as any).fbq?.('track', 'Lead',
-    { content_name: 'programa-lpb' },
+    { content_name: 'diagnostico-izzu' },
     { eventID: leadEventId }
   )
 
@@ -196,7 +232,7 @@ const handleSubmit = async () => {
   const submittedCountry = selectedCountry.value.code
 
   localStorage.setItem(
-    'lpb_contact',
+    'izzu_contact',
     JSON.stringify({
       nombre: submittedNombre,
       apellido: submittedApellido,
@@ -218,8 +254,8 @@ const handleSubmit = async () => {
       externalId: submittedEmail,
     },
     custom: {
-      content_name: 'Comunidad Anual Luisa Pita - Preventa VIP',
-      content_category: 'community-presale-registration',
+      content_name: 'IZZU Estudio - Diagnóstico Arquitectónico',
+      content_category: 'diagnostico-arquitectonico',
     },
   })
 
@@ -234,7 +270,6 @@ const handleSubmit = async () => {
   emit('close')
 }
 
-// ── Keyboard trap ─────────────────────────────────────────────────────────────
 const onKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') emit('close')
 }
@@ -268,22 +303,18 @@ watch(dropdownOpen, open => {
 
         <div class="rmodal">
 
-          <!-- Close -->
           <button class="rmodal__close" @click="$emit('close')" aria-label="Cerrar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
 
-          <!-- ── FORMULARIO ─────────────────────────────────── -->
-          <!-- ── FORMULARIO ─────────────────────────────────── -->
-            <p class="rmodal__eyebrow">Lista VIP de preventa</p>
-            <h2 id="rmodal-title" class="rmodal__title">Asegura tu cupo<br><span class="rmodal__title-accent">VIP</span></h2>
-            <p class="rmodal__subtitle">Solo para mujeres decididas a invertir un año entero con Luisa. Las registradas reciben aviso 24h antes y un código de descuento exclusivo cuando abra la preventa.</p>
+            <p class="rmodal__eyebrow">Sesión de diagnóstico gratuito</p>
+            <h2 id="rmodal-title" class="rmodal__title">Agenda tu <span class="rmodal__title-accent">diagnóstico</span></h2>
+            <p class="rmodal__subtitle">Completa tus datos y en minutos recibirás toda la información para tu sesión de diagnóstico técnico-legal sin costo. Sin compromiso.</p>
 
             <form class="rmodal__form" @submit.prevent="handleSubmit" novalidate>
 
-              <!-- Nombre + Apellido -->
               <div class="rmodal__row">
                 <div class="rmodal__field" :class="{ 'has-error': touched.nombre && errors.nombre }">
                   <label for="r-nombre">Nombre</label>
@@ -312,7 +343,6 @@ watch(dropdownOpen, open => {
                 </div>
               </div>
 
-              <!-- Email -->
               <div class="rmodal__field" :class="{ 'has-error': touched.email && errors.email }">
                 <label for="r-email">Correo electrónico</label>
                 <input
@@ -326,12 +356,10 @@ watch(dropdownOpen, open => {
                 <span v-if="touched.email && errors.email" class="rmodal__error">{{ errors.email }}</span>
               </div>
 
-              <!-- Teléfono con selector de país -->
               <div class="rmodal__field" :class="{ 'has-error': touched.phone && errors.phone }">
                 <label>Teléfono</label>
                 <div class="rmodal__phone-wrap">
 
-                  <!-- Selector de país -->
                   <button
                     type="button"
                     class="rmodal__country-trigger"
@@ -346,7 +374,6 @@ watch(dropdownOpen, open => {
                     </svg>
                   </button>
 
-                  <!-- Dropdown -->
                   <Transition name="dropdown">
                     <div v-if="dropdownOpen" class="rmodal__country-dropdown" role="listbox">
                       <input
@@ -378,7 +405,6 @@ watch(dropdownOpen, open => {
                     </div>
                   </Transition>
 
-                  <!-- Input numérico -->
                   <input
                     class="rmodal__phone-input"
                     type="tel"
@@ -390,7 +416,6 @@ watch(dropdownOpen, open => {
                     @blur="onBlur('phone')"
                   />
 
-                  <!-- Indicador de validez -->
                   <span class="rmodal__phone-status" :class="{ valid: phoneValid, invalid: touched.phone && !phoneValid && form.phone }" aria-hidden="true">
                     <svg v-if="phoneValid" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                       <polyline points="20 6 9 17 4 12"/>
@@ -407,7 +432,6 @@ watch(dropdownOpen, open => {
                 </span>
               </div>
 
-              <!-- Submit -->
               <button class="rmodal__submit" type="submit" :disabled="submitting">
                 <svg v-if="submitting" class="rmodal__spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
@@ -417,7 +441,7 @@ watch(dropdownOpen, open => {
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 </template>
-                {{ submitting ? 'Enviando...' : 'VER EL VIDEO AHORA' }}
+                {{ submitting ? 'Enviando...' : 'AGENDAR MI DIAGNÓSTICO' }}
               </button>
 
               <p class="rmodal__legal">
@@ -440,13 +464,12 @@ watch(dropdownOpen, open => {
 @use '@/styles/fonts.modules.scss' as fonts;
 
 $bg: #ffffff;
-$border: rgba(colors.$OS-NAVY, 0.1);
+$border: rgba(colors.$IZZU-PRIMARY, 0.1);
 $input-bg: #f9fbff;
 $text-muted: #7a8ea5;
 $text-body: #3a4f6a;
-$accent: colors.$OS-RED;
+$accent: colors.$IZZU-ACCENT;
 
-// ── Overlay ──────────────────────────────────────────────────────────────────
 .rmodal-overlay {
   position: fixed;
   inset: 0;
@@ -461,7 +484,6 @@ $accent: colors.$OS-RED;
   overflow-y: auto;
 }
 
-// ── Modal box ─────────────────────────────────────────────────────────────────
 .rmodal {
   position: relative;
   width: 100%;
@@ -471,8 +493,8 @@ $accent: colors.$OS-RED;
   border-radius: 24px;
   padding: 48px 40px 40px;
   box-shadow:
-    0 10px 40px rgba(colors.$OS-NAVY, 0.08),
-    0 40px 100px rgba(colors.$OS-NAVY, 0.12);
+    0 10px 40px rgba(colors.$IZZU-PRIMARY, 0.08),
+    0 40px 100px rgba(colors.$IZZU-PRIMARY, 0.12);
   max-height: 92vh;
   overflow-y: auto;
 
@@ -482,7 +504,6 @@ $accent: colors.$OS-RED;
   }
 }
 
-// ── Close ─────────────────────────────────────────────────────────────────────
 .rmodal__close {
   position: absolute;
   top: 16px;
@@ -506,7 +527,6 @@ $accent: colors.$OS-RED;
   }
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
 .rmodal__eyebrow {
   font-family: fonts.$font-accent;
   font-size: 0.68rem;
@@ -523,7 +543,7 @@ $accent: colors.$OS-RED;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.18;
-  color: colors.$OS-DARK;
+  color: colors.$IZZU-DARK;
   margin: 0 0 8px;
 }
 
@@ -538,7 +558,6 @@ $accent: colors.$OS-RED;
   margin: 0 0 28px;
 }
 
-// ── Form ──────────────────────────────────────────────────────────────────────
 .rmodal__form {
   display: flex;
   flex-direction: column;
@@ -577,7 +596,7 @@ $accent: colors.$OS-RED;
     padding: 11px 14px;
     font-family: fonts.$font-secondary;
     font-size: 0.92rem;
-    color: colors.$OS-DARK;
+    color: colors.$IZZU-DARK;
     outline: none;
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 
@@ -601,7 +620,6 @@ $accent: colors.$OS-RED;
   color: #ff6680;
 }
 
-// ── Phone ─────────────────────────────────────────────────────────────────────
 .rmodal__phone-wrap {
   position: relative;
   display: flex;
@@ -665,7 +683,6 @@ $accent: colors.$OS-RED;
   }
 }
 
-// ── Country dropdown ──────────────────────────────────────────────────────────
 .rmodal__country-dropdown {
   position: absolute;
   top: calc(100% + 6px);
@@ -693,7 +710,7 @@ $accent: colors.$OS-RED;
   background: rgba(255,255,255,0.04);
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.07);
-  color: colors.$OS-DARK;
+  color: colors.$IZZU-DARK;
   font-family: fonts.$font-secondary;
   font-size: 0.84rem;
   outline: none;
@@ -761,7 +778,6 @@ $accent: colors.$OS-RED;
   flex-shrink: 0;
 }
 
-// ── Phone input + status ──────────────────────────────────────────────────────
 .rmodal__phone-input {
   flex: 1;
   min-width: 0;
@@ -771,7 +787,7 @@ $accent: colors.$OS-RED;
   padding: 11px 40px 11px 12px !important;
   font-family: fonts.$font-secondary;
   font-size: 0.92rem;
-  color: colors.$OS-DARK;
+  color: colors.$IZZU-DARK;
   outline: none !important;
   box-shadow: none !important;
 
@@ -809,7 +825,6 @@ $accent: colors.$OS-RED;
   padding: 2px 0;
 }
 
-// ── Submit ─────────────────────────────────────────────────────────────────────
 .rmodal__submit {
   width: 100%;
   display: flex;
@@ -824,16 +839,17 @@ $accent: colors.$OS-RED;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: #ffffff;
-  background: $accent;
+  background: colors.$IZZU-PRIMARY;
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  box-shadow: 0 8px 28px rgba($accent, 0.35);
+  box-shadow: 0 8px 28px rgba(colors.$IZZU-PRIMARY, 0.35);
   transition: transform 0.2s ease, box-shadow 0.25s ease, opacity 0.2s;
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 14px 40px rgba(colors.$BAKANO-PINK, 0.5);
+    background: colors.$IZZU-ACCENT;
+    box-shadow: 0 14px 40px rgba(colors.$IZZU-ACCENT, 0.5);
   }
 
   &:active:not(:disabled) {
@@ -867,7 +883,6 @@ $accent: colors.$OS-RED;
   svg { opacity: 0.5; flex-shrink: 0; }
 }
 
-// ── Thank You step ────────────────────────────────────────────────────────────
 .rmodal__ty {
   display: flex;
   flex-direction: column;
@@ -883,12 +898,12 @@ $accent: colors.$OS-RED;
   gap: 6px;
   padding: 6px 14px;
   border-radius: 50px;
-  background: rgba(colors.$BAKANO-GREEN, 0.12);
-  border: 1px solid rgba(colors.$BAKANO-GREEN, 0.25);
+  background: rgba(colors.$IZZU-ACCENT, 0.12);
+  border: 1px solid rgba(colors.$IZZU-ACCENT, 0.25);
   font-family: fonts.$font-interface;
   font-size: 0.72rem;
   font-weight: 600;
-  color: colors.$BAKANO-GREEN;
+  color: colors.$IZZU-ACCENT;
   letter-spacing: 0.5px;
 }
 
@@ -923,7 +938,6 @@ $accent: colors.$OS-RED;
   @media (max-width: 480px) { display: none; }
 }
 
-// ── Team cards ────────────────────────────────────────────────────────────────
 .rmodal__team {
   display: flex;
   gap: 12px;
@@ -946,8 +960,8 @@ $accent: colors.$OS-RED;
   transition: border-color 0.2s, background 0.2s;
 
   &:hover {
-    border-color: rgba(colors.$BAKANO-PINK, 0.2);
-    background: rgba(colors.$BAKANO-PINK, 0.03);
+    border-color: rgba(colors.$IZZU-ACCENT, 0.2);
+    background: rgba(colors.$IZZU-ACCENT, 0.03);
   }
 }
 
@@ -957,7 +971,7 @@ $accent: colors.$OS-RED;
   border-radius: 50%;
   object-fit: cover;
   object-position: top;
-  border: 2px solid rgba(colors.$BAKANO-PINK, 0.3);
+  border: 2px solid rgba(colors.$IZZU-ACCENT, 0.3);
   flex-shrink: 0;
 }
 
@@ -987,11 +1001,10 @@ $accent: colors.$OS-RED;
 }
 
 @keyframes cta-glow {
-  0%, 100% { box-shadow: 0 8px 28px rgba(colors.$BAKANO-PINK, 0.35); }
-  50% { box-shadow: 0 8px 44px rgba(colors.$BAKANO-PINK, 0.6); }
+  0%, 100% { box-shadow: 0 8px 28px rgba(colors.$IZZU-ACCENT, 0.35); }
+  50% { box-shadow: 0 8px 44px rgba(colors.$IZZU-ACCENT, 0.6); }
 }
 
-// ── Transiciones ──────────────────────────────────────────────────────────────
 .rmodal-fade-enter-active {
   transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
 

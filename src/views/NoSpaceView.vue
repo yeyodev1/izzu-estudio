@@ -3,11 +3,12 @@
  * NoSpaceView.vue — /sin-cupo
  *
  * Página de rechazo empático cuando no califica en QualifyModal.
- * Cooldown 48h: el contador en pantalla muestra cuándo puede volver a aplicar.
+ * Cooldown 24h: el contador en pantalla muestra cuándo puede volver a aplicar.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import IzzuHeader from '@/components/IzzuHeader.vue'
 
-const COOLDOWN_MS = 48 * 60 * 60 * 1000
+const COOLDOWN_MS = 24 * 60 * 60 * 1000
 
 const now = ref(Date.now())
 const disqAt = ref<number>(0)
@@ -30,7 +31,7 @@ const countdown = computed(() => {
 let timerId: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  disqAt.value = Number(localStorage.getItem('lpb_disq_at') ?? '0')
+  disqAt.value = Number(localStorage.getItem('izzu_disq_at') ?? '0')
   now.value = Date.now()
   timerId = setInterval(() => {
     now.value = Date.now()
@@ -42,24 +43,25 @@ onBeforeUnmount(() => {
 })
 
 const reapply = () => {
-  localStorage.removeItem('lpb_disq_at')
+  localStorage.removeItem('izzu_disq_at')
   window.location.href = '/'
 }
 </script>
 
 <template>
+  <IzzuHeader variant="light" />
   <main class="ns">
     <section class="ns__container">
       <span class="ns__icon" aria-hidden="true">
-        <i class="fa-solid fa-heart" />
+        <i class="fa-solid fa-compass" />
       </span>
 
-      <h1 class="ns__title">Esta cohorte no es para ti hoy — y está bien.</h1>
+      <h1 class="ns__title">Este diagnóstico no es para ti hoy — y está bien.</h1>
 
       <p class="ns__lead">
-        La comunidad anual de Luisa Pita Bejarano está hecha para mujeres que pueden invertir
-        <strong>capital tres cifras</strong> y comprometerse <strong>un año entero</strong>.
-        Si hoy no es tu momento, no fuerces algo que no calza con tu vida real.
+        Nuestras sesiones de diagnóstico están diseñadas para propietarios, inversionistas y
+        desarrolladores con necesidades específicas de regularización patrimonial.
+        <strong>Si hoy no es tu momento, no fuerces algo que no calza con tu situación actual.</strong>
       </p>
 
       <div class="ns__cooldown" :class="{ 'ns__cooldown--ready': canReapply }">
@@ -77,7 +79,7 @@ const reapply = () => {
           {{ countdown }}
         </p>
         <p v-if="!canReapply" class="ns__cooldown-hint">
-          48 horas desde que respondiste — si tu situación cambia, estaremos aquí.
+          24 horas desde que respondiste — si tu situación cambia, estaremos aquí.
         </p>
 
         <button v-if="canReapply" class="ns__cooldown-cta" type="button" @click="reapply">
@@ -89,17 +91,18 @@ const reapply = () => {
       <div class="ns__card">
         <h2>Mientras tanto, no te quedes lejos.</h2>
         <p>
-          Sigue el trabajo de Luisa en Instagram. Ahí compartirá rutinas, reflexiones y novedades de la
-          comunidad. Cuando sientas que es tu momento, vuelves y aplicas a la próxima cohorte.
+          Sigue el trabajo de IZZU Estudio en Instagram. Ahí compartimos contenido sobre
+          regularización de propiedades, propiedad horizontal y blindaje patrimonial.
+          Cuando tengas una propiedad específica, vuelves y agendas tu diagnóstico.
         </p>
         <a
-          href="https://www.instagram.com/luisapitabejarano/"
+          href="https://www.instagram.com/izzuestudio/"
           target="_blank"
           rel="noopener noreferrer"
           class="ns__link"
         >
           <i class="fa-brands fa-instagram" aria-hidden="true" />
-          Seguir a @luisapitabejarano
+          Seguir a @izzuestudio
         </a>
       </div>
 
@@ -114,7 +117,7 @@ const reapply = () => {
 <style lang="scss" scoped>
 .ns {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f5fffa 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #F5F7FA 0%, #ffffff 100%);
   display: grid;
   place-items: center;
   padding: 3rem 1.5rem;
@@ -138,8 +141,8 @@ const reapply = () => {
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: #16c784;
-  color: #0d1117;
+  background: #1B365D;
+  color: #C4956A;
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
 }
@@ -175,13 +178,13 @@ const reapply = () => {
   flex-direction: column;
   gap: 0.5rem;
   align-items: center;
-  border: 2px solid rgba(22, 199, 132, 0.25);
+  border: 2px solid rgba(196, 149, 106, 0.25);
 }
 
 .ns__cooldown--ready {
-  background: linear-gradient(180deg, #16c784 0%, #0a9e68 100%);
-  color: #0d1117;
-  border-color: rgba(13, 17, 23, 0.15);
+  background: linear-gradient(180deg, #1B365D 0%, #0D1117 100%);
+  color: #ffffff;
+  border-color: rgba(196, 149, 106, 0.5);
 }
 
 .ns__cooldown-label {
@@ -204,7 +207,7 @@ const reapply = () => {
   font-size: clamp(1.85rem, 6vw, 2.4rem);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.06em;
-  color: #16c784;
+  color: #C4956A;
 }
 
 .ns__cooldown-hint {
@@ -218,8 +221,8 @@ const reapply = () => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: #0d1117;
-  color: #16c784;
+  background: #C4956A;
+  color: #0D1117;
   border: 0;
   padding: 0.85rem 1.5rem;
   border-radius: 999px;
@@ -230,7 +233,7 @@ const reapply = () => {
 
   &:hover {
     background: #ffffff;
-    color: #0d1117;
+    color: #1B365D;
     transform: translateY(-1px);
   }
 }
@@ -264,7 +267,7 @@ const reapply = () => {
   align-items: center;
   gap: 0.55rem;
   background: #0d1117;
-  color: #16c784;
+  color: #C4956A;
   padding: 0.85rem 1.5rem;
   border-radius: 999px;
   text-decoration: none;
@@ -275,7 +278,7 @@ const reapply = () => {
   transition: background 160ms ease, color 160ms ease;
 
   &:hover {
-    background: #16c784;
+    background: #C4956A;
     color: #0d1117;
   }
 }
@@ -291,7 +294,7 @@ const reapply = () => {
     text-decoration: none;
 
     &:hover {
-      color: #0a9e68;
+      color: #A0784F;
       text-decoration: underline;
     }
   }

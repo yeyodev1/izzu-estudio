@@ -1,17 +1,8 @@
 <script setup lang="ts">
-/**
- * QualifyModal.vue
- *
- * Filtro de calificación post-registro:
- *   1. ¿Capital tres cifras disponible para la preventa?
- *   2. ¿Lista para comprometerte 1 año entero con Luisa?
- *
- * Ambas "sí" → /registrada (lista VIP)
- * Cualquier "no" → /sin-cupo + cooldown 24h
- */
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { trackCompleteRegistration } from '@/utils/tracking'
+import ContractModal from '@/components/ContractModal.vue'
 
 interface Lead {
   nombre: string
@@ -30,76 +21,122 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 
 const router = useRouter()
 
-type ProfileKey = 'dueña-negocio' | 'emprendedora' | 'profesional' | 'mamá' | 'otra'
+type Step = 'video' | 'contract' | 'questions'
+const step = ref<Step>('video')
 
-const PROFILES: { key: ProfileKey; label: string; icon: string }[] = [
-  { key: 'dueña-negocio', label: 'Dueña de negocio', icon: 'fa-store' },
-  { key: 'emprendedora', label: 'Emprendedora', icon: 'fa-rocket' },
-  { key: 'profesional', label: 'Profesional ocupada', icon: 'fa-briefcase' },
-  { key: 'mamá', label: 'Mamá ocupada', icon: 'fa-heart' },
-  { key: 'otra', label: 'Otra', icon: 'fa-user' },
-]
+type Situacion = 'ya-construi' | 'dividir-terreno' | 'propiedad-horizontal' | 'desarrollador-urbano' | 'herencia'
+type Inmueble = 'terreno-baldio' | 'casa' | 'edificio' | 'local' | 'terreno-rural'
+type Valor = '-50k' | '50k-200k' | '+200k'
 
-const capital = ref<'si' | 'no' | ''>('')
-const compromiso = ref<'si' | 'no' | ''>('')
-const profile = ref<ProfileKey | ''>('')
-const instagram = ref('')
+const situacion = ref<Situacion | ''>('')
+const inmueble = ref<Inmueble | ''>('')
+const valor = ref<Valor | ''>('')
 const submitting = ref(false)
 
-const normalizedInstagram = computed(() => {
-  const raw = instagram.value.trim()
-  if (!raw) return ''
-  return raw.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/\/$/, '')
-})
+const contractModalOpen = ref(false)
 
-const isValid = computed(
-  () => capital.value !== '' && compromiso.value !== '' && profile.value !== '',
-)
-const qualifies = computed(
-  () => capital.value === 'si' && compromiso.value === 'si',
-)
+const isValid = computed(() => situacion.value !== '' && inmueble.value !== '' && valor.value !== '')
+
+const wasVideoWatched = (): boolean => {
+  try { return localStorage.getItem('izzu_video_watched') === '1' }
+  catch { return false }
+}
 
 const reset = () => {
-  capital.value = ''
-  compromiso.value = ''
-  profile.value = ''
-  instagram.value = ''
+  step.value = wasVideoWatched() ? 'contract' : 'video'
+  situacion.value = ''
+  inmueble.value = ''
+  valor.value = ''
   submitting.value = false
 }
 
-watch(
-  () => props.open,
-  (v) => {
-    if (v) reset()
-  },
-)
+const goToContract = () => {
+  step.value = 'contract'
+}
+
+const goToQuestions = () => {
+  step.value = 'questions'
+}
+
+const openContractModal = () => {
+  contractModalOpen.value = true
+}
+
+const onContractAccepted = () => {
+  contractModalOpen.value = false
+  goToQuestions()
+}
+
+watch(() => props.open, (v) => { if (v) reset() })
 
 const onKey = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && props.open) emit('close')
+  if (e.key === 'Escape' && props.open && !contractModalOpen.value) emit('close')
 }
 
 onMounted(() => document.addEventListener('keydown', onKey))
 onUnmounted(() => document.removeEventListener('keydown', onKey))
 
-const sendQualificationWebhook = async (calificada: boolean) => {
+const SITUACION_LABEL: Record<string, string> = {
+  'ya-construi': '🏚️ Ya construyó sin permisos — necesita regularizar edificación',
+  'dividir-terreno': '🗺️ Quiere dividir terreno en lotes',
+  'propiedad-horizontal': '🏢 Necesita dividir edificio en departamentos/oficinas (Propiedad Horizontal)',
+  'desarrollador-urbano': '🏗️ Desarrollador — proyecto urbanístico / entrega-recepción',
+  'herencia': '👨‍👩‍👧 Herencia familiar — división legal entre herederos',
+}
+
+const INMUEBLE_LABEL: Record<string, string> = {
+  'terreno-baldio': '🟫 Terreno baldío / macrolote',
+  'casa': '🏠 Casa unifamiliar',
+  'edificio': '🏢 Edificio de departamentos / oficinas',
+  'local': '🏪 Local comercial / uso mixto',
+  'terreno-rural': '🌳 Terreno rural / finca',
+}
+
+const VALOR_LABEL: Record<string, string> = {
+  '-50k': '💵 Menos de $50,000',
+  '50k-200k': '💵 $50,000 — $200,000',
+  '+200k': '💎 Más de $200,000',
+}
+
+const sendQualificationWebhook = async () => {
   const url = import.meta.env.VITE_WEBHOOK_CALIFICACION
   if (!url || !props.lead) return
 
   const baseTags = [
-    'paso-2-calificacion',
-    'preventa-comunidad-anual',
-    'luisa-pita-web',
-    calificada ? 'lead-calificado-vip' : 'lead-no-calificado',
-    `capital-${capital.value}`,
-    `compromiso-${compromiso.value}`,
-    profile.value ? `perfil-${profile.value}` : 'perfil-sin-definir',
+    'paso-3-calificacion',
+    'izzu-diagnostico',
+    'lead-calificado',
+    `situacion-${situacion.value}`,
+    `inmueble-${inmueble.value}`,
+    `valor-${valor.value}`,
+    `pais-${props.lead.country.toLowerCase()}`,
   ]
 
-  const etiquetas = baseTags.join(', ')
+  const nombreFull = `${props.lead.nombre} ${props.lead.apellido}`.trim()
 
-  const nota = calificada
-    ? `🎯 Paso 2 - ✅ CALIFICÓ VIP 🌟. 💰 Capital tres cifras: SI. 📅 Compromiso 1 año: SI. 👩‍💼 Perfil: ${profile.value}. 📸 Instagram: ${normalizedInstagram.value || 'no proporcionado'}. 🚨 Enviar aviso 24h antes de apertura ⏰ + 🎁 código de descuento exclusivo.`
-    : `🎯 Paso 2 - ❌ NO CALIFICÓ. 💰 Capital tres cifras: ${capital.value.toUpperCase()}. 📅 Compromiso 1 año: ${compromiso.value.toUpperCase()}. 👩‍💼 Perfil: ${profile.value}. 📸 Instagram: ${normalizedInstagram.value || 'no proporcionado'}. ⏳ Cooldown 48h activo, redirigida a IG @luisapitabejarano 👋.`
+  const nota = [
+    '✅ *Lead CALIFICADO — listo para agendar diagnóstico*',
+    '',
+    '📍 *Paso 3 / 3* — Calificación completa',
+    '🎯 *Estado:* Lead aprobado · Coordinar llamada de 20 min',
+    '',
+    `👤 *Nombre:* ${nombreFull}`,
+    `✉️ *Email:* ${props.lead.email}`,
+    `📱 *WhatsApp:* ${props.lead.phone}`,
+    `🌎 *País:* ${props.lead.country}`,
+    '',
+    '📋 *Respuestas de calificación:*',
+    `  • *Situación:* ${SITUACION_LABEL[situacion.value] ?? situacion.value}`,
+    `  • *Inmueble:* ${INMUEBLE_LABEL[inmueble.value] ?? inmueble.value}`,
+    `  • *Valor estimado:* ${VALOR_LABEL[valor.value] ?? valor.value}`,
+    '',
+    '🎬 Vio video VSL · 📝 Aceptó términos · ✏️ Respondió 3 preguntas',
+    '',
+    `🆔 *Event ID:* ${props.lead.eventId}_qual`,
+    `🕒 *Timestamp:* ${new Date().toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}`,
+    '',
+    '🚀 *Acción:* Contactar por WhatsApp para coordinar día/hora de diagnóstico técnico-legal gratuito (20 min).',
+  ].join('\n')
 
   try {
     await fetch(url, {
@@ -107,178 +144,214 @@ const sendQualificationWebhook = async (calificada: boolean) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...props.lead,
-        calificada,
-        capital: capital.value,
-        compromiso: compromiso.value,
-        perfil: profile.value,
-        instagram: normalizedInstagram.value,
+        nombreCompleto: nombreFull,
+        situacion: situacion.value,
+        situacionLabel: SITUACION_LABEL[situacion.value] ?? situacion.value,
+        inmueble: inmueble.value,
+        inmuebleLabel: INMUEBLE_LABEL[inmueble.value] ?? inmueble.value,
+        valor: valor.value,
+        valorLabel: VALOR_LABEL[valor.value] ?? valor.value,
         timestamp: new Date().toISOString(),
-        source: 'luisa-pita-web',
-        step: 2,
+        source: 'izzu-estudio-web',
+        step: 3,
         stepName: 'calificacion',
-        nota,
+        estado: 'lead-calificado',
         tags: baseTags,
-        etiquetas,
+        etiquetas: baseTags.join(', '),
+        nota,
+        notas: nota,
+        note: nota,
       }),
     })
-  } catch {
-    /* tracking no debe romper UX */
-  }
+  } catch { /* tracking no debe romper UX */ }
 }
 
 const submit = async () => {
   if (!isValid.value || submitting.value) return
   submitting.value = true
 
-  const calificada = qualifies.value
+  await sendQualificationWebhook()
 
-  await sendQualificationWebhook(calificada)
-
-  if (calificada) {
-    if (props.lead) {
-      trackCompleteRegistration({
-        eventId: `${props.lead.eventId}_qual`,
-        user: {
-          email: props.lead.email,
-          phone: props.lead.phone,
-          firstName: props.lead.nombre,
-          lastName: props.lead.apellido,
-          country: props.lead.country,
-          externalId: props.lead.email,
-        },
-        custom: {
-          content_name: 'Comunidad Anual Luisa Pita - Preventa VIP',
-          content_category: 'community-presale-qualified',
-          perfil: profile.value,
-          instagram: normalizedInstagram.value,
-        },
-      })
-    }
-    emit('close')
-    router.push({ name: 'vip-confirmed' })
-  } else {
-    localStorage.setItem('lpb_disq_at', String(Date.now()))
-    emit('close')
-    router.push({ name: 'no-space' })
+  if (props.lead) {
+    trackCompleteRegistration({
+      eventId: `${props.lead.eventId}_qual`,
+      user: {
+        email: props.lead.email,
+        phone: props.lead.phone,
+        firstName: props.lead.nombre,
+        lastName: props.lead.apellido,
+        country: props.lead.country,
+        externalId: props.lead.email,
+      },
+      custom: {
+        content_name: 'IZZU Estudio - Diagnóstico Calificado',
+        content_category: 'diagnostico-calificado',
+        situacion: situacion.value,
+        inmueble: inmueble.value,
+        valor: valor.value,
+      },
+    })
   }
+
+  emit('close')
+  router.push({ name: 'session-booked' })
 }
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="qmodal-fade">
-      <div
-        v-if="open"
-        class="qmodal-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="qmodal-title"
-        @click.self="$emit('close')"
-      >
+      <div v-if="open" class="qmodal-overlay" role="dialog" aria-modal="true" aria-labelledby="qmodal-title" @click.self="contractModalOpen ? null : $emit('close')">
         <div class="qmodal">
-          <button
-            type="button"
-            class="qmodal__close"
-            aria-label="Cerrar"
-            @click="$emit('close')"
-          >
-            <i class="fa-solid fa-xmark" aria-hidden="true" />
-          </button>
 
-          <p class="qmodal__eyebrow">Una pausa antes de cerrar tu cupo</p>
-          <h2 id="qmodal-title" class="qmodal__title">
-            Solo dos preguntas <span class="qmodal__title-accent">honestas</span>
-          </h2>
-          <p class="qmodal__subtitle">
-            La comunidad anual con Luisa es para mujeres decididas. Responde con sinceridad — esto define si recibes el código de descuento exclusivo.
-          </p>
+          <!-- Progress -->
+          <div class="qmodal__progress">
+            <span class="qmodal__dot" :class="{ active: step === 'video', done: step !== 'video' }" />
+            <span class="qmodal__bar" :class="{ filled: step !== 'video' }" />
+            <span class="qmodal__dot" :class="{ active: step === 'contract', done: step === 'questions' }" />
+            <span class="qmodal__bar" :class="{ filled: step === 'questions' }" />
+            <span class="qmodal__dot" :class="{ active: step === 'questions' }" />
+          </div>
 
-          <form class="qmodal__form" @submit.prevent="submit">
-            <fieldset class="qmodal__field" :disabled="submitting">
-              <legend class="qmodal__legend">
-                1. ¿Tienes disponible un capital de tres cifras (USD) para invertir el día que abra la preventa?
-              </legend>
-              <label class="qmodal__option">
-                <input v-model="capital" type="radio" value="si" />
-                <span class="qmodal__option-text">
-                  <strong>Sí, lo tengo listo.</strong> Estoy esperando que abra para reservar.
-                </span>
-              </label>
-              <label class="qmodal__option">
-                <input v-model="capital" type="radio" value="no" />
-                <span class="qmodal__option-text">
-                  <strong>Aún no.</strong> Estoy explorando o necesito tiempo para reunirlo.
-                </span>
-              </label>
-            </fieldset>
+          <!-- ── STEP 1: VIDEO ─────────────────────────────────── -->
+          <template v-if="step === 'video'">
+            <div class="qmodal__header">
+              <span class="qmodal__eyebrow">Paso 1 de 3</span>
+              <h2 id="qmodal-title">Conoce la metodología IZZU</h2>
+              <p class="qmodal__subtitle">Mira este breve video para entender cómo podemos ayudarte a blindar tu patrimonio.</p>
+            </div>
 
-            <fieldset class="qmodal__field" :disabled="submitting">
-              <legend class="qmodal__legend">
-                2. ¿Estás lista para comprometerte un año entero con Luisa para transformar tu cuerpo y tu vida?
-              </legend>
-              <label class="qmodal__option">
-                <input v-model="compromiso" type="radio" value="si" />
-                <span class="qmodal__option-text">
-                  <strong>Sí, estoy decidida.</strong> Quiero el año completo, no algo a medias.
-                </span>
-              </label>
-              <label class="qmodal__option">
-                <input v-model="compromiso" type="radio" value="no" />
-                <span class="qmodal__option-text">
-                  <strong>Solo estoy explorando.</strong> Aún no quiero comprometerme un año.
-                </span>
-              </label>
-            </fieldset>
+            <div class="qmodal__video">
+              <wistia-player media-id="7le35zsekh" aspect="1.7777777777777777"></wistia-player>
+            </div>
 
-            <fieldset class="qmodal__field" :disabled="submitting">
-              <legend class="qmodal__legend">
-                3. ¿Cómo te describes hoy? <span class="qmodal__hint">(elige la que más te represente)</span>
-              </legend>
-              <div class="qmodal__chips">
-                <label
-                  v-for="p in PROFILES"
-                  :key="p.key"
-                  class="qmodal__chip"
-                  :class="{ 'qmodal__chip--active': profile === p.key }"
-                >
-                  <input v-model="profile" type="radio" :value="p.key" />
-                  <i :class="['fa-solid', p.icon]" aria-hidden="true" />
-                  <span>{{ p.label }}</span>
-                </label>
+            <button class="qmodal__btn" type="button" @click="goToContract">
+              Ya vi el video, continuar
+              <i class="fa-solid fa-arrow-right" aria-hidden="true" />
+            </button>
+          </template>
+
+          <!-- ── STEP 2: CONTRACT ──────────────────────────────── -->
+          <template v-if="step === 'contract'">
+            <div class="qmodal__header">
+              <span class="qmodal__eyebrow">Paso 2 de 3</span>
+              <h2 id="qmodal-title">Confirma tu interés</h2>
+              <p class="qmodal__subtitle">Revisa y acepta los términos de nuestro diagnóstico para continuar con la calificación.</p>
+            </div>
+
+            <div class="qmodal__contract-card" role="button" tabindex="0" @click="openContractModal" @keydown.enter="openContractModal" @keydown.space.prevent="openContractModal">
+              <div class="qmodal__contract-img-wrap">
+                <img src="/izzu-thumbnail.png" alt="IZZU Estudio de Arquitectura - Acuerdo de diagnóstico" class="qmodal__contract-img" loading="eager" />
+                <div class="qmodal__contract-overlay">
+                  <i class="fa-solid fa-file-signature" aria-hidden="true" />
+                  <span>Ver acuerdo de servicio</span>
+                </div>
               </div>
-            </fieldset>
-
-            <fieldset class="qmodal__field" :disabled="submitting">
-              <legend class="qmodal__legend">
-                4. Tu Instagram <span class="qmodal__hint">(opcional, nos ayuda a conocerte)</span>
-              </legend>
-              <div class="qmodal__ig">
-                <span class="qmodal__ig-prefix">@</span>
-                <input
-                  v-model="instagram"
-                  type="text"
-                  class="qmodal__ig-input"
-                  placeholder="tuusuario"
-                  autocomplete="off"
-                  inputmode="text"
-                />
+              <div class="qmodal__contract-info">
+                <h3>Acuerdo de Servicio Profesional</h3>
+                <p>Al hacer clic aquí podrás leer y aceptar los términos del diagnóstico técnico-legal gratuito de IZZU Estudio de Arquitectura.</p>
+                <span class="qmodal__contract-cta">
+                  Leer y aceptar términos
+                  <i class="fa-solid fa-arrow-right" aria-hidden="true" />
+                </span>
               </div>
-            </fieldset>
+            </div>
+          </template>
 
-            <button
-              type="submit"
-              class="qmodal__submit"
-              :disabled="!isValid || submitting"
-            >
-              <span v-if="submitting" class="qmodal__spinner" aria-hidden="true" />
-              <span v-else>Enviar respuestas</span>
+          <!-- ── STEP 3: QUESTIONS ─────────────────────────────── -->
+          <template v-if="step === 'questions'">
+            <button type="button" class="qmodal__back" @click="step = 'contract'" aria-label="Volver">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true" />
             </button>
 
-            <p class="qmodal__legal">
-              Si no encajas hoy, no pasa nada — la comunidad está hecha para quien está lista. Podrás registrarte en una próxima cohorte.
-            </p>
-          </form>
+            <div class="qmodal__header">
+              <span class="qmodal__eyebrow">Paso 3 de 3</span>
+              <h2 id="qmodal-title">Cuéntanos sobre tu propiedad</h2>
+              <p class="qmodal__subtitle">Esto nos ayuda a preparar tu diagnóstico personalizado. Sin compromiso.</p>
+            </div>
+
+            <form class="qmodal__form" @submit.prevent="submit">
+              <fieldset class="qmodal__field" :disabled="submitting">
+                <legend class="qmodal__legend">1. ¿Cuál es tu situación actual?</legend>
+                <label class="qmodal__option">
+                  <input v-model="situacion" type="radio" value="ya-construi" />
+                  <span class="qmodal__option-text"><strong>Ya construí sin permisos</strong> y necesito regularizar mi edificación.</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="situacion" type="radio" value="dividir-terreno" />
+                  <span class="qmodal__option-text"><strong>Quiero dividir un terreno</strong> en lotes más pequeños para vender o desarrollar.</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="situacion" type="radio" value="propiedad-horizontal" />
+                  <span class="qmodal__option-text"><strong>Necesito dividir un edificio</strong> en departamentos u oficinas (Propiedad Horizontal).</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="situacion" type="radio" value="desarrollador-urbano" />
+                  <span class="qmodal__option-text"><strong>Soy desarrollador</strong> y necesito aprobación de proyecto urbanístico o entrega-recepción.</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="situacion" type="radio" value="herencia" />
+                  <span class="qmodal__option-text"><strong>Es una herencia familiar</strong> que necesita división legal para los herederos.</span>
+                </label>
+              </fieldset>
+
+              <fieldset class="qmodal__field" :disabled="submitting">
+                <legend class="qmodal__legend">2. ¿Qué tipo de inmueble tienes?</legend>
+                <label class="qmodal__option">
+                  <input v-model="inmueble" type="radio" value="terreno-baldio" />
+                  <span class="qmodal__option-text"><strong>Terreno baldío / macrolote</strong> sin construcción.</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="inmueble" type="radio" value="casa" />
+                  <span class="qmodal__option-text"><strong>Casa unifamiliar</strong> con o sin ampliaciones.</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="inmueble" type="radio" value="edificio" />
+                  <span class="qmodal__option-text"><strong>Edificio de departamentos / oficinas</strong> con múltiples unidades.</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="inmueble" type="radio" value="local" />
+                  <span class="qmodal__option-text"><strong>Local comercial</strong> o espacio de uso mixto.</span>
+                </label>
+                <label class="qmodal__option">
+                  <input v-model="inmueble" type="radio" value="terreno-rural" />
+                  <span class="qmodal__option-text"><strong>Terreno rural</strong> o finca con vocación de división.</span>
+                </label>
+              </fieldset>
+
+              <fieldset class="qmodal__field" :disabled="submitting">
+                <legend class="qmodal__legend">3. ¿En qué rango estimas el valor de tu propiedad?</legend>
+                <div class="qmodal__chips">
+                  <label class="qmodal__chip" :class="{ active: valor === '-50k' }">
+                    <input v-model="valor" type="radio" value="-50k" />
+                    <span>Menos de $50,000</span>
+                  </label>
+                  <label class="qmodal__chip" :class="{ active: valor === '50k-200k' }">
+                    <input v-model="valor" type="radio" value="50k-200k" />
+                    <span>Entre $50,000 y $200,000</span>
+                  </label>
+                  <label class="qmodal__chip" :class="{ active: valor === '+200k' }">
+                    <input v-model="valor" type="radio" value="+200k" />
+                    <span>Más de $200,000</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <button type="submit" class="qmodal__btn qmodal__btn--submit" :disabled="!isValid || submitting">
+                <span v-if="submitting" class="qmodal__spinner" aria-hidden="true" />
+                <span v-else>
+                  Agendar mi diagnóstico gratuito
+                  <i class="fa-solid fa-arrow-right" aria-hidden="true" />
+                </span>
+              </button>
+
+              <p class="qmodal__legal">Sin compromiso. Si tu caso encaja con nuestros servicios, te agendaremos una sesión de 20 minutos.</p>
+            </form>
+          </template>
+
         </div>
+
+        <ContractModal :open="contractModalOpen" @close="contractModalOpen = false" @accepted="onContractAccepted" />
       </div>
     </Transition>
   </Teleport>
@@ -299,9 +372,9 @@ const submit = async () => {
 .qmodal {
   position: relative;
   width: 100%;
-  max-width: 560px;
+  max-width: 640px;
   background: #ffffff;
-  color: #0d1117;
+  color: #0D1117;
   border-radius: 1.25rem;
   padding: 2.25rem 1.75rem 1.75rem;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35);
@@ -313,24 +386,49 @@ const submit = async () => {
   }
 }
 
-.qmodal__close {
-  position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 999px;
-  border: 0;
-  background: rgba(13, 17, 23, 0.06);
-  color: #0d1117;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: background 160ms ease;
+.qmodal__progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 1.75rem;
+}
 
-  &:hover {
-    background: rgba(13, 17, 23, 0.12);
+.qmodal__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5e9ec;
+  flex-shrink: 0;
+  transition: background 0.3s ease, transform 0.3s ease;
+
+  &.active {
+    background: #1B365D;
+    transform: scale(1.3);
   }
+
+  &.done {
+    background: #C4956A;
+  }
+}
+
+.qmodal__bar {
+  width: 60px;
+  height: 2px;
+  background: #e5e9ec;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+
+  @media (min-width: 480px) { width: 100px; }
+
+  &.filled {
+    background: #C4956A;
+  }
+}
+
+.qmodal__header {
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
 .qmodal__eyebrow {
@@ -338,30 +436,206 @@ const submit = async () => {
   letter-spacing: 0.08em;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #0a9e68;
+  color: #C4956A;
   margin: 0 0 0.5rem;
+  display: block;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
 }
 
-.qmodal__title {
+.qmodal__header h2 {
   font-family: 'Outfit', system-ui, sans-serif;
   font-weight: 800;
-  font-size: clamp(1.5rem, 3vw, 1.85rem);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
   line-height: 1.15;
   margin: 0 0 0.75rem;
-}
-
-.qmodal__title-accent {
-  color: #16c784;
+  color: #1B365D;
 }
 
 .qmodal__subtitle {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.5;
-  color: #41484f;
-  margin: 0 0 1.5rem;
+  color: #6b7280;
+  margin: 0;
 }
 
+.qmodal__video {
+  border-radius: 1rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px rgba(13, 17, 23, 0.12);
+  background: #1B365D;
+  aspect-ratio: 16 / 9;
+
+  wistia-player {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+}
+
+.qmodal__btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: #1B365D;
+  color: #ffffff;
+  border: 0;
+  border-radius: 0.85rem;
+  padding: 1rem 1.5rem;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 120ms ease, background 160ms ease, box-shadow 200ms ease;
+  box-shadow: 0 8px 24px rgba(27, 54, 93, 0.3);
+
+  &:hover:not(:disabled) {
+    background: #2a4a7a;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(27, 54, 93, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  i { font-size: 0.9rem; }
+}
+
+.qmodal__btn--submit {
+  background: #C4956A;
+  color: #0D1117;
+  box-shadow: 0 8px 24px rgba(196, 149, 106, 0.35);
+
+  &:hover:not(:disabled) {
+    background: #A0784F;
+    color: #ffffff;
+    box-shadow: 0 12px 32px rgba(160, 120, 79, 0.4);
+  }
+}
+
+.qmodal__back {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(13, 17, 23, 0.06);
+  color: #0D1117;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 160ms ease;
+
+  &:hover { background: rgba(13, 17, 23, 0.12); }
+}
+
+// ── CONTRACT CARD ──────────────────────────────────────────────
+.qmodal__contract-card {
+  cursor: pointer;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: #ffffff;
+  border: 2px solid rgba(27, 54, 93, 0.1);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  outline: none;
+
+  &:hover, &:focus-visible {
+    border-color: #C4956A;
+    box-shadow: 0 8px 28px rgba(196, 149, 106, 0.2);
+  }
+}
+
+.qmodal__contract-img-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #F5F7FA;
+}
+
+.qmodal__contract-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 300ms ease;
+
+  .qmodal__contract-card:hover & { transform: scale(1.03); }
+}
+
+.qmodal__contract-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(27, 54, 93, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 250ms ease;
+
+  i {
+    font-size: 2.2rem;
+    color: #C4956A;
+  }
+
+  span {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+  }
+
+  .qmodal__contract-card:hover &,
+  .qmodal__contract-card:focus-visible & {
+    opacity: 1;
+  }
+}
+
+.qmodal__contract-info {
+  padding: 1.25rem 1.25rem 1.5rem;
+
+  h3 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 0.4rem;
+    color: #1B365D;
+  }
+
+  p {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 0.85rem;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 1rem;
+  }
+}
+
+.qmodal__contract-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #C4956A;
+  transition: gap 200ms ease;
+
+  .qmodal__contract-card:hover & { gap: 0.75rem; }
+
+  i { font-size: 0.8rem; }
+}
+
+// ── FORM (step 3) ──────────────────────────────────────────────
 .qmodal__form {
   display: flex;
   flex-direction: column;
@@ -381,103 +655,9 @@ const submit = async () => {
   font-family: 'Outfit', system-ui, sans-serif;
   font-size: 1rem;
   font-weight: 700;
-  color: #0d1117;
+  color: #1B365D;
   margin-bottom: 0.25rem;
   line-height: 1.35;
-}
-
-.qmodal__hint {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-left: 0.35rem;
-}
-
-.qmodal__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.qmodal__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.55rem 0.9rem;
-  border: 1.5px solid #e5e9ec;
-  border-radius: 999px;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #1f2933;
-  cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
-
-  input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  i {
-    color: #6b7280;
-    font-size: 0.85rem;
-    transition: color 160ms ease;
-  }
-
-  &:hover {
-    border-color: #16c784;
-    color: #0a9e68;
-  }
-}
-
-.qmodal__chip--active {
-  border-color: #16c784;
-  background: #f0fff8;
-  color: #0a9e68;
-
-  i {
-    color: #0a9e68;
-  }
-}
-
-.qmodal__ig {
-  display: flex;
-  align-items: center;
-  border: 1.5px solid #e5e9ec;
-  border-radius: 0.75rem;
-  background: #ffffff;
-  overflow: hidden;
-  transition: border-color 160ms ease;
-
-  &:focus-within {
-    border-color: #16c784;
-  }
-}
-
-.qmodal__ig-prefix {
-  padding: 0.7rem 0.5rem 0.7rem 0.95rem;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 700;
-  color: #6b7280;
-  border-right: 1.5px solid #e5e9ec;
-  background: #f9fafb;
-}
-
-.qmodal__ig-input {
-  flex: 1;
-  border: 0;
-  outline: 0;
-  padding: 0.7rem 0.95rem;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 0.95rem;
-  color: #0d1117;
-  background: transparent;
-
-  &::placeholder {
-    color: #9ca3af;
-  }
 }
 
 .qmodal__option {
@@ -490,61 +670,60 @@ const submit = async () => {
   cursor: pointer;
   transition: border-color 160ms ease, background 160ms ease;
 
-  input {
-    margin-top: 0.2rem;
-    accent-color: #16c784;
-  }
+  input { margin-top: 0.2rem; accent-color: #C4956A; }
 
   &:hover {
-    border-color: #16c784;
-    background: #f0fff8;
+    border-color: #C4956A;
+    background: #F5F7FA;
   }
 
   &:has(input:checked) {
-    border-color: #16c784;
-    background: #f0fff8;
+    border-color: #C4956A;
+    background: #F5F7FA;
   }
 }
 
 .qmodal__option-text {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   line-height: 1.45;
-  color: #1f2933;
+  color: #4b5563;
 
   strong {
     display: block;
-    color: #0d1117;
-    margin-bottom: 0.15rem;
+    color: #1B365D;
+    margin-bottom: 0.1rem;
   }
 }
 
-.qmodal__submit {
-  background: #16c784;
-  color: #0d1117;
-  border: 0;
-  border-radius: 0.85rem;
-  padding: 0.95rem 1.25rem;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: transform 120ms ease, background 160ms ease, opacity 160ms ease;
+.qmodal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.qmodal__chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  padding: 0.65rem 1.1rem;
+  border: 1.5px solid #e5e9ec;
+  border-radius: 999px;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #4b5563;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
 
-  &:hover:not(:disabled) {
-    background: #0a9e68;
-    color: #ffffff;
-    transform: translateY(-1px);
-  }
+  input { position: absolute; opacity: 0; pointer-events: none; }
 
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
+  &:hover { border-color: #C4956A; color: #A0784F; }
+
+  &.active {
+    border-color: #C4956A;
+    background: #F5F7FA;
+    color: #1B365D;
   }
 }
 
@@ -552,32 +731,23 @@ const submit = async () => {
   width: 1.1rem;
   height: 1.1rem;
   border-radius: 50%;
-  border: 2.5px solid rgba(13, 17, 23, 0.25);
-  border-top-color: #0d1117;
+  border: 2.5px solid rgba(255,255,255,0.25);
+  border-top-color: #ffffff;
   animation: qmodal-spin 0.8s linear infinite;
 }
 
-@keyframes qmodal-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+@keyframes qmodal-spin { to { transform: rotate(360deg); } }
 
 .qmodal__legal {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 0.78rem;
-  color: #6b7280;
+  color: #9ca3af;
   text-align: center;
   margin: 0.5rem 0 0;
 }
 
 .qmodal-fade-enter-active,
-.qmodal-fade-leave-active {
-  transition: opacity 200ms ease;
-}
-
+.qmodal-fade-leave-active { transition: opacity 200ms ease; }
 .qmodal-fade-enter-from,
-.qmodal-fade-leave-to {
-  opacity: 0;
-}
+.qmodal-fade-leave-to { opacity: 0; }
 </style>

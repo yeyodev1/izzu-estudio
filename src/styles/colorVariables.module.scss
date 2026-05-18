@@ -1,34 +1,22 @@
-// Luisa Pita Bejarano — Programa de Transformación
-// Paleta: Verde / Negro / Blanco
+// IZZU Estudio de Arquitectura — Regularización y Blindaje Patrimonial
+// Paleta: Azul marino / Dorado / Blanco
 
-$LPB-GREEN:   #16C784;   // Verde vibrante — CTAs y acentos principales
-$LPB-GREEN-D: #0A9E68;   // Verde oscuro — hover states
-$LPB-BLACK:   #0D1117;   // Negro profundo — fondos oscuros y texto
-$LPB-DARK:    #0D1117;   // Alias texto oscuro
-$LPB-LIGHT:   #F0FFF8;   // Fondo muy claro (tinte verde suave)
-$LPB-SURFACE: #F5FFFA;   // Cards/superficies claras
+$IZZU-PRIMARY:  #1B365D;   // Azul marino — confianza, estabilidad, arquitectura
+$IZZU-ACCENT:   #C4956A;   // Dorado/piedra cálido — premium, terroso
+$IZZU-ACCENT-D: #A0784F;   // Dorado oscuro — hover states
+$IZZU-DARK:     #0D1117;   // Texto / bloques oscuros
+$IZZU-LIGHT:    #F5F7FA;   // Fondos suaves gris-azul claro
+$IZZU-SURFACE:  #FFFFFF;   // Cards blancas
 
 // Aliases semánticos
-$LPB-PRIMARY:   $LPB-GREEN;
-$LPB-SECONDARY: $LPB-GREEN-D;
-$LPB-ACCENT:    $LPB-GREEN;
-
-// Legacy (backward-compat — todos apuntan a verde/negro)
-$LPB-PINK:    $LPB-GREEN;
-$LPB-PURPLE:  $LPB-GREEN-D;
-$LPB-CORAL:   $LPB-GREEN;
-
-$BAKANO-PRIMARY: $LPB-GREEN;
-$BAKANO-PINK:    $LPB-GREEN;
-$BAKANO-DARK:    $LPB-BLACK;
-$BAKANO-LIGHT:   $LPB-LIGHT;
-$BAKANO-PURPLE:  $LPB-GREEN-D;
-$BAKANO-GREEN:   $LPB-GREEN;
+$IZZU-PRIMARY-ALIAS:   $IZZU-PRIMARY;
+$IZZU-SECONDARY:       $IZZU-ACCENT;
+$IZZU-ACCENT-ALIAS:    $IZZU-ACCENT;
 
 // Colores base
 $white: #ffffff;
 $text-light: #f5f5f5;
-$overlay-primary: rgba($LPB-GREEN, 0.1);
+$overlay-primary: rgba($IZZU-PRIMARY, 0.1);
 
 // Grises UI
 $gray-100: #f8f9fa;
@@ -40,19 +28,3 @@ $gray-600: #6c757d;
 $gray-700: #495057;
 $gray-800: #343a40;
 $gray-900: #212529;
-
-// AB aliases
-$AB-WOOD:    $LPB-GREEN;
-$AB-EARTH:   $LPB-GREEN-D;
-$AB-FOREST:  $LPB-BLACK;
-$AB-SAGE:    $LPB-GREEN;
-$AB-CREAM:   $LPB-LIGHT;
-$AB-WHITE:   #ffffff;
-
-// OS aliases
-$OS-RED:     $LPB-GREEN;
-$OS-NAVY:    $LPB-BLACK;
-$OS-BLUE:    $LPB-GREEN-D;
-$OS-DARK:    $LPB-BLACK;
-$OS-LIGHT:   $LPB-LIGHT;
-$OS-SURFACE: $LPB-SURFACE;

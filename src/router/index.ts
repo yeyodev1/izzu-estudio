@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, type RouteMeta } from 'vue-router'
 
 import FunnelView from '@/views/FunnelView.vue'
-import VIPConfirmedView from '@/views/VIPConfirmedView.vue'
+import SessionBookedView from '@/views/SessionBookedView.vue'
 import NoSpaceView from '@/views/NoSpaceView.vue'
 import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import LegalNoticeView from '@/views/LegalNoticeView.vue'
@@ -17,11 +17,11 @@ declare module 'vue-router' {
   }
 }
 
-const SITE = 'https://luisapitabejarano.com'
+const SITE = 'https://izzuestudio.com'
 
-const BRAND_TITLE = 'Comunidad Anual Luisa Pita — Preventa VIP cerrada'
+const BRAND_TITLE = 'IZZU Estudio de Arquitectura — Diagnóstico Técnico-Legal Gratuito'
 const BRAND_DESC =
-  'Sé de las primeras en entrar a la comunidad anual de Luisa Pita Bejarano. Lista VIP en preventa para mujeres ocupadas y dueñas de negocio decididas a transformar su cuerpo y su vida en un año.'
+  'Sesión de diagnóstico técnico-legal sin costo para regularizar tu propiedad, dividir terrenos o blindar tu patrimonio. IZZU Estudio de Arquitectura, especialistas en regularización de edificaciones y propiedad horizontal.'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -41,18 +41,18 @@ const router = createRouter({
       } satisfies RouteMeta,
     },
     {
-      path: '/registrada',
-      name: 'vip-confirmed',
-      component: VIPConfirmedView,
+      path: '/agendada',
+      name: 'session-booked',
+      component: SessionBookedView,
       meta: {
-        title: 'Estás dentro | Comunidad Luisa Pita Bejarano',
+        title: 'Sesión agendada | IZZU Estudio de Arquitectura',
         description:
-          'Confirmación oficial: tu cupo VIP en la preventa de la comunidad anual de Luisa Pita Bejarano está reservado.',
-        canonical: `${SITE}/registrada`,
-        ogTitle: 'Estás dentro de la lista VIP de Luisa Pita Bejarano',
+          'Confirmación oficial: tu sesión de diagnóstico técnico-legal con IZZU Estudio de Arquitectura ha sido agendada. Te contactaremos pronto.',
+        canonical: `${SITE}/agendada`,
+        ogTitle: 'Sesión de diagnóstico agendada — IZZU Estudio',
         ogDescription:
-          'Recibirás aviso 24h antes de que abra la preventa y el código de descuento exclusivo en tu email.',
-        ogUrl: `${SITE}/registrada`,
+          'Recibirás la confirmación y los pasos a seguir para tu diagnóstico de regularización patrimonial.',
+        ogUrl: `${SITE}/agendada`,
       } satisfies RouteMeta,
     },
     {
@@ -60,13 +60,13 @@ const router = createRouter({
       name: 'no-space',
       component: NoSpaceView,
       meta: {
-        title: 'Esta comunidad no es para ti — Luisa Pita Bejarano',
+        title: 'Este diagnóstico no es para ti hoy — IZZU Estudio',
         description:
-          'La comunidad anual de Luisa Pita Bejarano es para mujeres decididas a invertir un año entero en su transformación. Sigue su trabajo en Instagram mientras tanto.',
+          'Las sesiones de diagnóstico de IZZU Estudio están diseñadas para propietarios e inversionistas con necesidades específicas de regularización. Síguenos en Instagram mientras tanto.',
         canonical: `${SITE}/sin-cupo`,
-        ogTitle: 'Esta comunidad no es para ti — Luisa Pita Bejarano',
+        ogTitle: 'Este diagnóstico no es para ti hoy — IZZU Estudio',
         ogDescription:
-          'Mujeres decididas a comprometerse con el año completo. Sigue a Luisa en Instagram para mantenerte cerca.',
+          'Propietarios, inversionistas y desarrolladores con necesidades de regularización patrimonial. Síguenos en Instagram.',
         ogUrl: `${SITE}/sin-cupo`,
       } satisfies RouteMeta,
     },
@@ -75,12 +75,12 @@ const router = createRouter({
       name: 'privacy-policy',
       component: PrivacyPolicyView,
       meta: {
-        title: 'Políticas de Privacidad | Luisa Pita Bejarano',
+        title: 'Políticas de Privacidad | IZZU Estudio de Arquitectura',
         description:
-          'Cómo Luisa Pita Bejarano trata los datos personales recogidos en la preventa de la comunidad anual.',
+          'Cómo IZZU Estudio de Arquitectura trata los datos personales recogidos en las sesiones de diagnóstico.',
         canonical: `${SITE}/politicas-privacidad`,
-        ogTitle: 'Políticas de Privacidad | Luisa Pita Bejarano',
-        ogDescription: 'Tratamiento y protección de datos personales en luisapitabejarano.com.',
+        ogTitle: 'Políticas de Privacidad | IZZU Estudio',
+        ogDescription: 'Tratamiento y protección de datos personales en izzuestudio.com.',
         ogUrl: `${SITE}/politicas-privacidad`,
       } satisfies RouteMeta,
     },
@@ -89,19 +89,19 @@ const router = createRouter({
       name: 'legal-notice',
       component: LegalNoticeView,
       meta: {
-        title: 'Aviso Legal | Luisa Pita Bejarano',
+        title: 'Aviso Legal | IZZU Estudio de Arquitectura',
         description:
-          'Términos de uso del sitio luisapitabejarano.com y de la preventa de la comunidad anual.',
+          'Términos de uso del sitio izzuestudio.com y de las sesiones de diagnóstico técnico-legal.',
         canonical: `${SITE}/aviso-legal`,
-        ogTitle: 'Aviso Legal | Luisa Pita Bejarano',
-        ogDescription: 'Términos de uso del sitio y de la preventa.',
+        ogTitle: 'Aviso Legal | IZZU Estudio',
+        ogDescription: 'Términos de uso del sitio y de las sesiones de diagnóstico.',
         ogUrl: `${SITE}/aviso-legal`,
       } satisfies RouteMeta,
     },
-    // Compatibilidad con rutas viejas — redirigen a home
+    // Compatibilidad con rutas viejas — redirigen a home o nuevas rutas
     { path: '/ver-video', redirect: '/' },
     { path: '/agendar', redirect: '/' },
-    { path: '/cita-confirmada', redirect: '/registrada' },
+    { path: '/cita-confirmada', redirect: '/agendada' },
     { path: '/sin-espacio', redirect: '/sin-cupo' },
     { path: '/registro-vsl-tr', redirect: '/' },
     // 404 → home
@@ -153,7 +153,7 @@ router.afterEach((to) => {
 })
 
 // ── Router Guards ──────────────────────────────────────────────────────────────
-const COOLDOWN_MS = 48 * 60 * 60 * 1000
+const COOLDOWN_MS = 24 * 60 * 60 * 1000
 
 const isLocalhost = () => {
   if (typeof window === 'undefined') return false
@@ -161,38 +161,31 @@ const isLocalhost = () => {
   return h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.endsWith('.local')
 }
 
-// Páginas que requieren haber dejado contacto antes (lpb_contact en localStorage).
-// Las páginas legales siempre son públicas. La home (`funnel`) es el único punto de entrada.
-const PROTECTED_ROUTES = new Set(['vip-confirmed', 'no-space'])
+const PROTECTED_ROUTES = new Set(['session-booked', 'no-space'])
 const PUBLIC_ROUTES = new Set(['funnel', 'privacy-policy', 'legal-notice'])
 
 router.beforeEach((to, _from, next) => {
   if (isLocalhost()) return next()
 
-  const hasContact = !!localStorage.getItem('lpb_contact')
-  const disqAt = Number(localStorage.getItem('lpb_disq_at') ?? '0')
+  const hasContact = !!localStorage.getItem('izzu_contact')
+  const disqAt = Number(localStorage.getItem('izzu_disq_at') ?? '0')
   const isDisqualified = disqAt && Date.now() - disqAt < COOLDOWN_MS
   const routeName = to.name as string | undefined
 
-  // Páginas protegidas: solo accesibles si ya dejó contacto.
   if (routeName && PROTECTED_ROUTES.has(routeName) && !hasContact) {
     return next({ name: 'funnel' })
   }
 
-  // Cualquier ruta no listada explícitamente: cierra todo y manda al funnel.
   if (routeName && !PROTECTED_ROUTES.has(routeName) && !PUBLIC_ROUTES.has(routeName)) {
     return next({ name: 'funnel' })
   }
 
-  // Si fue descalificado en cooldown y reintenta entrar al funnel, lo mandamos al rechazo.
   if (isDisqualified && routeName === 'funnel') {
     return next({ name: 'no-space' })
   }
 
-  // Si ya dejó contacto (y no está descalificada), llevarla a la confirmación VIP
-  // en vez de mostrarle de nuevo el pitch de registro.
   if (hasContact && !isDisqualified && routeName === 'funnel') {
-    return next({ name: 'vip-confirmed' })
+    return next({ name: 'session-booked' })
   }
 
   next()

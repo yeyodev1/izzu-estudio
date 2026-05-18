@@ -2,7 +2,7 @@
 /**
  * SocialProofToast.vue
  *
- * Toast cíclico de prueba social: muestra registros recientes a la lista VIP.
+ * Toast cíclico de prueba social: muestra propietarios que agendaron diagnóstico.
  * Nombres parcialmente anonimizados con bullets · ubicación general.
  * Ciclo: 5s visible + 2s gap = 7s total.
  */
@@ -16,18 +16,18 @@ interface ProofItem {
 }
 
 const items: ProofItem[] = [
-  { name: 'Ma••••• R•••', city: 'Quito · Ecuador', ago: 'hace 2 min' },
-  { name: 'Pa••• M•••••', city: 'Guayaquil · Ecuador', ago: 'hace 4 min' },
-  { name: 'Ca••••• V••', city: 'Bogotá · Colombia', ago: 'hace 6 min' },
-  { name: 'An••• L••••', city: 'Lima · Perú', ago: 'hace 8 min' },
-  { name: 'Va••••• G••', city: 'Cuenca · Ecuador', ago: 'hace 11 min' },
-  { name: 'Da••• R••••', city: 'Miami · USA', ago: 'hace 13 min' },
-  { name: 'So••• H••••', city: 'Madrid · España', ago: 'hace 15 min' },
-  { name: 'Na••••• C••', city: 'Santiago · Chile', ago: 'hace 18 min' },
-  { name: 'Lu••• M••••', city: 'CDMX · México', ago: 'hace 21 min' },
-  { name: 'Ga••••• P••', city: 'Manta · Ecuador', ago: 'hace 24 min' },
-  { name: 'Is•••• T••••', city: 'Buenos Aires · Argentina', ago: 'hace 28 min' },
-  { name: 'Ve••••• A••', city: 'Loja · Ecuador', ago: 'hace 32 min' },
+  { name: 'Ca•••• R••••', city: 'Quito · Ecuador', ago: 'hace 3 min' },
+  { name: 'Ma•••• P••••', city: 'Guayaquil · Ecuador', ago: 'hace 5 min' },
+  { name: 'An•••• M•••', city: 'Bogotá · Colombia', ago: 'hace 7 min' },
+  { name: 'Jo••• G••••', city: 'Lima · Perú', ago: 'hace 9 min' },
+  { name: 'Pa•••• V•••', city: 'Cuenca · Ecuador', ago: 'hace 12 min' },
+  { name: 'Ro••••• S••', city: 'Manta · Ecuador', ago: 'hace 14 min' },
+  { name: 'Fe••••• L••', city: 'Madrid · España', ago: 'hace 17 min' },
+  { name: 'Da•••• C••', city: 'Santiago · Chile', ago: 'hace 20 min' },
+  { name: 'Lu••• E••••', city: 'CDMX · México', ago: 'hace 23 min' },
+  { name: 'Ma••••• H••', city: 'Guayaquil · Ecuador', ago: 'hace 26 min' },
+  { name: 'Ca••• T••••', city: 'Buenos Aires · Argentina', ago: 'hace 30 min' },
+  { name: 'An•••• N••', city: 'Loja · Ecuador', ago: 'hace 34 min' },
 ]
 
 const route = useRoute()
@@ -71,7 +71,7 @@ const shouldShow = () => route.name === 'funnel'
       </span>
       <div class="proof__body">
         <p class="proof__line">
-          <strong>{{ current.name }}</strong> se registró a la lista VIP
+          <strong>{{ current.name }}</strong> agendó su diagnóstico
         </p>
         <p class="proof__meta">
           {{ current.city }} · {{ current.ago }}
@@ -104,8 +104,8 @@ const shouldShow = () => route.name === 'funnel'
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
-  background: #16c784;
-  color: #0d1117;
+  background: #1B365D;
+  color: #ffffff;
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -125,7 +125,7 @@ const shouldShow = () => route.name === 'funnel'
 
   strong {
     font-weight: 700;
-    color: #0a9e68;
+    color: #1B365D;
   }
 }
 

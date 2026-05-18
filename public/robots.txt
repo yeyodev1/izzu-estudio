@@ -6,7 +6,7 @@ Disallow: /src/
 Disallow: /.vite/
 
 # Sitemap
-Sitemap: https://luisapitabejarano.com/sitemap.xml
+Sitemap: https://izzuestudio.com/sitemap.xml
 
 # ─── LLM Crawlers — permitidos para indexación en IA ───────────────────────
 User-agent: GPTBot
@@ -47,4 +47,4 @@ Allow: /
 
 # ─── LLM Context Files ──────────────────────────────────────────────────────
 # Archivo optimizado para modelos de lenguaje grande
-# https://luisapitabejarano.com/llms.txt
+# https://izzuestudio.com/llms.txt

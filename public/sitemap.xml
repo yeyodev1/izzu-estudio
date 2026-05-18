@@ -1,33 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://luisapitabejarano.com/</loc>
+    <loc>https://izzuestudio.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://res.cloudinary.com/dkosgkjpq/image/upload/w_1200,h_630,c_fill,g_face,q_auto,f_auto/luisa-pita/luisa-11.jpg</image:loc>
-      <image:title>Luisa Pita Bejarano — Coach de transformación corporal</image:title>
-    </image:image>
   </url>
   <url>
-    <loc>https://luisapitabejarano.com/registrada</loc>
+    <loc>https://izzuestudio.com/agendada</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://luisapitabejarano.com/sin-cupo</loc>
+    <loc>https://izzuestudio.com/sin-cupo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://luisapitabejarano.com/politicas-privacidad</loc>
+    <loc>https://izzuestudio.com/politicas-privacidad</loc>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://luisapitabejarano.com/aviso-legal</loc>
+    <loc>https://izzuestudio.com/aviso-legal</loc>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>

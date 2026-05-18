@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import IzzuHeader from '@/components/IzzuHeader.vue'
 
 onMounted(() => {
   window.scrollTo({ top: 0, behavior: 'instant' })
@@ -7,6 +8,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <IzzuHeader variant="light" />
   <main class="legal">
     <article class="legal__container">
       <header class="legal__header">
@@ -21,10 +23,10 @@ onMounted(() => {
       <section>
         <h2>1. Responsable del tratamiento</h2>
         <p>
-          Luisa Pita Bejarano, persona natural con domicilio en Ecuador (datos legales completos:
+          IZZU Estudio de Arquitectura, persona natural con domicilio en Ecuador (datos legales completos:
           <em>[PENDIENTE: nombre legal exacto, RUC/cédula, dirección física]</em>), es responsable del
           tratamiento de los datos personales recogidos a través del sitio
-          <strong>luisapitabejarano.com</strong>.
+          <strong>izzuestudio.com</strong>.
         </p>
         <p>
           Para consultas sobre privacidad puedes escribir a
@@ -34,12 +36,12 @@ onMounted(() => {
 
       <section>
         <h2>2. Datos que recogemos</h2>
-        <p>Cuando te registras en la lista VIP de la preventa de la comunidad anual recogemos:</p>
+        <p>Cuando te registras para una sesión de diagnóstico técnico-legal recogemos:</p>
         <ul>
           <li>Nombre y apellido.</li>
           <li>Correo electrónico.</li>
           <li>Número de teléfono y país.</li>
-          <li>Respuestas a las dos preguntas de calificación (capital disponible, compromiso anual).</li>
+          <li>Respuestas a las preguntas de calificación (situación actual, tipo de inmueble, rango de valor).</li>
           <li>Datos técnicos y de atribución: dirección IP, agente de usuario, parámetros UTM, identificador de clic de Meta (fbclid) y cookies de Meta (_fbp, _fbc) cuando aplican.</li>
         </ul>
       </section>
@@ -47,8 +49,8 @@ onMounted(() => {
       <section>
         <h2>3. Finalidades del tratamiento</h2>
         <ul>
-          <li>Confirmar tu inscripción a la lista VIP y enviarte el código de descuento exclusivo cuando abra la preventa.</li>
-          <li>Avisarte 24 horas antes de la apertura de la preventa.</li>
+          <li>Agendar tu sesión de diagnóstico técnico-legal gratuito y contactarte para coordinar la misma.</li>
+          <li>Evaluar tu caso y preparar la estrategia de regularización o división de tu propiedad.</li>
           <li>Medir y optimizar las campañas publicitarias en plataformas como Meta (Facebook / Instagram) usando Meta Pixel y la API de Conversiones de Meta (Conversions API).</li>
           <li>Cumplir obligaciones legales o requerimientos de autoridades competentes.</li>
         </ul>
@@ -76,7 +78,7 @@ onMounted(() => {
       <section>
         <h2>6. Plazo de conservación</h2>
         <p>
-          Conservaremos tus datos mientras dure tu interés en la comunidad y, una vez finalizado, durante el plazo legal
+          Conservaremos tus datos mientras dure tu interés en nuestros servicios y, una vez finalizado, durante el plazo legal
           aplicable para fines tributarios y de defensa de derechos.
         </p>
       </section>
@@ -136,7 +138,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: #0a9e68;
+  color: #A0784F;
   text-decoration: none;
   font-family: 'Space Grotesk', system-ui, sans-serif;
   font-weight: 700;

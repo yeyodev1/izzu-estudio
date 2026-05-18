@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import IzzuHeader from '@/components/IzzuHeader.vue'
 
 onMounted(() => {
   window.scrollTo({ top: 0, behavior: 'instant' })
@@ -7,6 +8,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <IzzuHeader variant="light" />
   <main class="legal">
     <article class="legal__container">
       <header class="legal__header">
@@ -21,7 +23,7 @@ onMounted(() => {
       <section>
         <h2>1. Titularidad del sitio</h2>
         <p>
-          El presente sitio web <strong>luisapitabejarano.com</strong> es titularidad de Luisa Pita Bejarano,
+          El presente sitio web <strong>izzuestudio.com</strong> es titularidad de IZZU Estudio de Arquitectura,
           persona natural con domicilio en Ecuador
           (<em>[PENDIENTE: nombre legal exacto, RUC/cédula, dirección física]</em>).
         </p>
@@ -33,24 +35,23 @@ onMounted(() => {
       <section>
         <h2>2. Objeto del sitio</h2>
         <p>
-          luisapitabejarano.com es el sitio oficial donde Luisa Pita Bejarano gestiona la lista VIP de
-          preventa de su <strong>comunidad anual de transformación corporal</strong>. El sitio captura datos
-          de contacto de mujeres interesadas, las clasifica según criterios honestos (capital disponible y
-          compromiso de un año) y les comunica oportunamente la apertura de la preventa.
+          izzuestudio.com es el sitio oficial de IZZU Estudio de Arquitectura para gestionar las
+          <strong>sesiones de diagnóstico técnico-legal gratuito</strong>. El sitio captura datos
+          de contacto de propietarios, inversionistas y desarrolladores interesados en regularización
+          de edificaciones, propiedad horizontal, división de solares y urbanismo estratégico.
         </p>
       </section>
 
       <section>
         <h2>3. Naturaleza de la oferta</h2>
         <p>
-          Este sitio anuncia una <strong>preventa cerrada</strong>. El registro a la lista VIP no implica una
-          compra ni un compromiso económico. La compra del acceso a la comunidad anual se realiza únicamente
-          cuando la preventa abra públicamente y la persona interesada lo confirme expresamente.
+          Este sitio anuncia <strong>sesiones de diagnóstico gratuito</strong>. El registro no implica
+          una compra ni un compromiso económico. La contratación de servicios de arquitectura se realiza
+          únicamente después del diagnóstico y con el consentimiento expreso del cliente.
         </p>
         <p>
-          Las imágenes, descripciones y testimonios mostrados son referenciales. La comunidad anual implica
-          un compromiso de doce meses con un programa que requiere participación activa de la usuaria; los
-          resultados dependen del esfuerzo individual.
+          Las imágenes, descripciones y casos de éxito mostrados son referenciales. Los resultados
+          de cada caso dependen de las circunstancias particulares de cada propiedad y cliente.
         </p>
       </section>
 
@@ -58,7 +59,7 @@ onMounted(() => {
         <h2>4. Propiedad intelectual</h2>
         <p>
           Todos los contenidos del sitio (textos, fotografías, diseño, marca y materiales audiovisuales) son
-          propiedad de Luisa Pita Bejarano o de terceros con licencia para su uso, y están protegidos por la
+          propiedad de IZZU Estudio de Arquitectura o de terceros con licencia para su uso, y están protegidos por la
           legislación de propiedad intelectual aplicable. Queda prohibida su reproducción total o parcial sin
           autorización previa por escrito.
         </p>
@@ -68,7 +69,7 @@ onMounted(() => {
         <h2>5. Uso del sitio</h2>
         <p>La persona usuaria se compromete a:</p>
         <ul>
-          <li>Proveer información veraz al registrarse en la lista VIP.</li>
+          <li>Proveer información veraz al registrarse para el diagnóstico.</li>
           <li>No utilizar el sitio para fines ilícitos o que perjudiquen a terceros.</li>
           <li>No intentar acceder, alterar o dañar la infraestructura tecnológica del sitio.</li>
         </ul>
@@ -77,7 +78,7 @@ onMounted(() => {
       <section>
         <h2>6. Limitación de responsabilidad</h2>
         <p>
-          Luisa Pita Bejarano no garantiza la disponibilidad ininterrumpida del sitio y no será responsable
+          IZZU Estudio de Arquitectura no garantiza la disponibilidad ininterrumpida del sitio y no será responsable
           por daños derivados de fallas técnicas, interrupciones del servicio o acciones de terceros.
         </p>
       </section>
@@ -95,7 +96,7 @@ onMounted(() => {
         <h2>8. Legislación aplicable</h2>
         <p>
           Este aviso legal se rige por la legislación de la República del Ecuador. Para cualquier
-          controversia, las partes se someten a los tribunales competentes del domicilio de la titular del
+          controversia, las partes se someten a los tribunales competentes del domicilio del titular del
           sitio, salvo que la normativa imperativa disponga otra cosa.
         </p>
       </section>
@@ -130,7 +131,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: #0a9e68;
+  color: #A0784F;
   text-decoration: none;
   font-family: 'Space Grotesk', system-ui, sans-serif;
   font-weight: 700;
@@ -183,7 +184,7 @@ ul {
 }
 
 a {
-  color: #0a9e68;
+  color: #A0784F;
   text-decoration: underline;
 
   &:hover {

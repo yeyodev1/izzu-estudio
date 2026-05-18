@@ -1,18 +1,4 @@
-/**
- * Captura fbclid, UTMs, _fbc y _fbp para atribución completa de Meta Ads.
- *
- * fbclid       → generado por Meta al hacer click en un anuncio
- * fbc          → cookie estándar Meta: fb.1.{ts}.{fbclid}
- * fbp          → cookie de browser ID de Meta (generada por el Pixel)
- * utm_source   → ej. "facebook", "meta"
- * utm_medium   → ej. "paid_ad", "paid"
- * utm_campaign → ej. "yeyo-tofu-lead"
- * utm_content  → ID o nombre del anuncio
- * utm_term     → ID del adset (opcional)
- * utm_id       → ID numérico de la campaña (opcional)
- */
-
-const STORAGE_KEY = 'os_fb'
+const STORAGE_KEY = 'izzu_fb'
 
 export interface FbParams {
   fbclid: string
@@ -35,17 +21,12 @@ function buildFbc(fbclid: string): string {
   return `fb.1.${Date.now()}.${fbclid}`
 }
 
-/**
- * Llama esto en el onMounted de FunnelView.
- * Captura fbclid + UTMs de la URL y los persiste en sessionStorage.
- */
 export function captureFbParams(): void {
   const params = new URLSearchParams(window.location.search)
   const fbclid = params.get('fbclid') ?? ''
 
   const existing = getStoredFbParams()
 
-  // Si ya tenemos fbclid y no llegó uno nuevo, conservar todo
   if (!fbclid && existing.fbclid) return
 
   const data: FbParams = {
@@ -63,9 +44,6 @@ export function captureFbParams(): void {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
-/**
- * Retorna todos los parámetros de atribución almacenados en esta sesión.
- */
 export function getStoredFbParams(): FbParams {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
