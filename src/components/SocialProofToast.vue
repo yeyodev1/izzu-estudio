@@ -55,7 +55,7 @@ onBeforeUnmount(() => {
   if (cycleTimer) clearTimeout(cycleTimer)
 })
 
-const shouldShow = () => route.name === 'funnel'
+const shouldShow = () => route.name === 'registration'
 </script>
 
 <template>

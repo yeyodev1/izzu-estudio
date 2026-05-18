@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory, type RouteMeta } from 'vue-router'
 
-import FunnelView from '@/views/FunnelView.vue'
-import SessionBookedView from '@/views/SessionBookedView.vue'
+import RegistrationView from '@/views/RegistrationView.vue'
+import VideoView from '@/views/VideoView.vue'
+import BookingView from '@/views/BookingView.vue'
+import ThanksView from '@/views/ThanksView.vue'
 import NoSpaceView from '@/views/NoSpaceView.vue'
 import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import LegalNoticeView from '@/views/LegalNoticeView.vue'
@@ -18,10 +20,9 @@ declare module 'vue-router' {
 }
 
 const SITE = 'https://izzuestudio.com'
-
 const BRAND_TITLE = 'IZZU Estudio de Arquitectura — Diagnóstico Técnico-Legal Gratuito'
 const BRAND_DESC =
-  'Sesión de diagnóstico técnico-legal sin costo para regularizar tu propiedad, dividir terrenos o blindar tu patrimonio. IZZU Estudio de Arquitectura, especialistas en regularización de edificaciones y propiedad horizontal.'
+  'Sesión de diagnóstico técnico-legal sin costo para regularizar tu propiedad, dividir terrenos o blindar tu patrimonio. IZZU Estudio de Arquitectura.'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,8 +30,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'funnel',
-      component: FunnelView,
+      name: 'registration',
+      component: RegistrationView,
       meta: {
         title: BRAND_TITLE,
         description: BRAND_DESC,
@@ -41,18 +42,36 @@ const router = createRouter({
       } satisfies RouteMeta,
     },
     {
-      path: '/agendada',
-      name: 'session-booked',
-      component: SessionBookedView,
+      path: '/video',
+      name: 'video',
+      component: VideoView,
       meta: {
-        title: 'Sesión agendada | IZZU Estudio de Arquitectura',
-        description:
-          'Confirmación oficial: tu sesión de diagnóstico técnico-legal con IZZU Estudio de Arquitectura ha sido agendada. Te contactaremos pronto.',
-        canonical: `${SITE}/agendada`,
-        ogTitle: 'Sesión de diagnóstico agendada — IZZU Estudio',
-        ogDescription:
-          'Recibirás la confirmación y los pasos a seguir para tu diagnóstico de regularización patrimonial.',
-        ogUrl: `${SITE}/agendada`,
+        title: 'Video diagnóstico | IZZU Estudio',
+        description: 'Mira el video diagnóstico de IZZU Estudio y completa tu calificación.',
+        canonical: `${SITE}/video`,
+        ogUrl: `${SITE}/video`,
+      } satisfies RouteMeta,
+    },
+    {
+      path: '/agendar',
+      name: 'booking',
+      component: BookingView,
+      meta: {
+        title: 'Agenda tu diagnóstico | IZZU Estudio',
+        description: 'Reserva el día y hora de tu sesión de diagnóstico técnico-legal con IZZU.',
+        canonical: `${SITE}/agendar`,
+        ogUrl: `${SITE}/agendar`,
+      } satisfies RouteMeta,
+    },
+    {
+      path: '/gracias',
+      name: 'thanks',
+      component: ThanksView,
+      meta: {
+        title: 'Gracias | IZZU Estudio',
+        description: 'Gracias por tu interés en IZZU Estudio de Arquitectura.',
+        canonical: `${SITE}/gracias`,
+        ogUrl: `${SITE}/gracias`,
       } satisfies RouteMeta,
     },
     {
@@ -60,13 +79,9 @@ const router = createRouter({
       name: 'no-space',
       component: NoSpaceView,
       meta: {
-        title: 'Este diagnóstico no es para ti hoy — IZZU Estudio',
-        description:
-          'Las sesiones de diagnóstico de IZZU Estudio están diseñadas para propietarios e inversionistas con necesidades específicas de regularización. Síguenos en Instagram mientras tanto.',
+        title: 'Este diagnóstico no es para ti hoy | IZZU Estudio',
+        description: 'Diagnóstico para casos específicos de regularización.',
         canonical: `${SITE}/sin-cupo`,
-        ogTitle: 'Este diagnóstico no es para ti hoy — IZZU Estudio',
-        ogDescription:
-          'Propietarios, inversionistas y desarrolladores con necesidades de regularización patrimonial. Síguenos en Instagram.',
         ogUrl: `${SITE}/sin-cupo`,
       } satisfies RouteMeta,
     },
@@ -75,12 +90,9 @@ const router = createRouter({
       name: 'privacy-policy',
       component: PrivacyPolicyView,
       meta: {
-        title: 'Políticas de Privacidad | IZZU Estudio de Arquitectura',
-        description:
-          'Cómo IZZU Estudio de Arquitectura trata los datos personales recogidos en las sesiones de diagnóstico.',
+        title: 'Políticas de Privacidad | IZZU Estudio',
+        description: 'Tratamiento de datos personales.',
         canonical: `${SITE}/politicas-privacidad`,
-        ogTitle: 'Políticas de Privacidad | IZZU Estudio',
-        ogDescription: 'Tratamiento y protección de datos personales en izzuestudio.com.',
         ogUrl: `${SITE}/politicas-privacidad`,
       } satisfies RouteMeta,
     },
@@ -89,54 +101,36 @@ const router = createRouter({
       name: 'legal-notice',
       component: LegalNoticeView,
       meta: {
-        title: 'Aviso Legal | IZZU Estudio de Arquitectura',
-        description:
-          'Términos de uso del sitio izzuestudio.com y de las sesiones de diagnóstico técnico-legal.',
+        title: 'Aviso Legal | IZZU Estudio',
+        description: 'Términos de uso del sitio.',
         canonical: `${SITE}/aviso-legal`,
-        ogTitle: 'Aviso Legal | IZZU Estudio',
-        ogDescription: 'Términos de uso del sitio y de las sesiones de diagnóstico.',
         ogUrl: `${SITE}/aviso-legal`,
       } satisfies RouteMeta,
     },
-    // Compatibilidad con rutas viejas — redirigen a home o nuevas rutas
-    { path: '/ver-video', redirect: '/' },
-    { path: '/agendar', redirect: '/' },
-    { path: '/cita-confirmada', redirect: '/agendada' },
+    // Compatibilidad con rutas viejas
+    { path: '/ver-video', redirect: '/video' },
+    { path: '/agendada', redirect: '/gracias' },
+    { path: '/cita-confirmada', redirect: '/gracias' },
     { path: '/sin-espacio', redirect: '/sin-cupo' },
     { path: '/registro-vsl-tr', redirect: '/' },
-    // 404 → home
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
 
-// ── SEO dinámico por ruta ──────────────────────────────────────────────────────
+// ── SEO dinámico ──────────────────────────────────────────────────────
 const setMeta = (name: string, content: string) => {
   let el = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)
-  if (!el) {
-    el = document.createElement('meta')
-    el.name = name
-    document.head.appendChild(el)
-  }
+  if (!el) { el = document.createElement('meta'); el.name = name; document.head.appendChild(el) }
   el.content = content
 }
-
 const setOgMeta = (property: string, content: string) => {
   let el = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`)
-  if (!el) {
-    el = document.createElement('meta')
-    el.setAttribute('property', property)
-    document.head.appendChild(el)
-  }
+  if (!el) { el = document.createElement('meta'); el.setAttribute('property', property); document.head.appendChild(el) }
   el.content = content
 }
-
 const setCanonical = (href: string) => {
   let el = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
-  if (!el) {
-    el = document.createElement('link')
-    el.rel = 'canonical'
-    document.head.appendChild(el)
-  }
+  if (!el) { el = document.createElement('link'); el.rel = 'canonical'; document.head.appendChild(el) }
   el.href = href
 }
 
@@ -147,12 +141,10 @@ router.afterEach((to) => {
   setOgMeta('og:title', meta.ogTitle ?? meta.title ?? BRAND_TITLE)
   setOgMeta('og:description', meta.ogDescription ?? meta.description ?? BRAND_DESC)
   setOgMeta('og:url', meta.ogUrl ?? SITE)
-  setOgMeta('twitter:title', meta.ogTitle ?? meta.title ?? BRAND_TITLE)
-  setOgMeta('twitter:description', meta.ogDescription ?? meta.description ?? BRAND_DESC)
   setCanonical(meta.canonical ?? SITE)
 })
 
-// ── Router Guards ──────────────────────────────────────────────────────────────
+// ── Guards ────────────────────────────────────────────────────────────
 const COOLDOWN_MS = 24 * 60 * 60 * 1000
 
 const isLocalhost = () => {
@@ -161,31 +153,34 @@ const isLocalhost = () => {
   return h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.endsWith('.local')
 }
 
-const PROTECTED_ROUTES = new Set(['session-booked', 'no-space'])
-const PUBLIC_ROUTES = new Set(['funnel', 'privacy-policy', 'legal-notice'])
+const REQUIRES_CONTACT = new Set(['video', 'booking', 'thanks'])
+const REQUIRES_QUALIFIED = new Set(['booking'])
 
 router.beforeEach((to, _from, next) => {
   if (isLocalhost()) return next()
 
   const hasContact = !!localStorage.getItem('izzu_contact')
+  const isQualified = localStorage.getItem('izzu_qualified') === '1'
   const disqAt = Number(localStorage.getItem('izzu_disq_at') ?? '0')
-  const isDisqualified = disqAt && Date.now() - disqAt < COOLDOWN_MS
+  const isDisqualified = !!disqAt && Date.now() - disqAt < COOLDOWN_MS
   const routeName = to.name as string | undefined
 
-  if (routeName && PROTECTED_ROUTES.has(routeName) && !hasContact) {
-    return next({ name: 'funnel' })
+  if (!routeName) return next({ name: 'registration' })
+
+  if (REQUIRES_CONTACT.has(routeName) && !hasContact) {
+    return next({ name: 'registration' })
   }
 
-  if (routeName && !PROTECTED_ROUTES.has(routeName) && !PUBLIC_ROUTES.has(routeName)) {
-    return next({ name: 'funnel' })
+  if (REQUIRES_QUALIFIED.has(routeName) && !isQualified) {
+    return next({ name: hasContact ? 'video' : 'registration' })
   }
 
-  if (isDisqualified && routeName === 'funnel') {
+  if (isDisqualified && routeName === 'registration') {
     return next({ name: 'no-space' })
   }
 
-  if (hasContact && !isDisqualified && routeName === 'funnel') {
-    return next({ name: 'session-booked' })
+  if (isQualified && (routeName === 'registration' || routeName === 'video')) {
+    return next({ name: 'booking' })
   }
 
   next()
