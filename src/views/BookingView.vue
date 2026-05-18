@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import IzzuHeader from '@/components/IzzuHeader.vue'
 
@@ -7,9 +7,73 @@ const router = useRouter()
 const contactName = ref<string>('')
 
 const BOOKING_URL = 'https://api.leadconnectorhq.com/widget/booking/ihxxTpoKpfX0nJZXoNlx'
+const GHL_ENDPOINT = 'booking-analytics/event/submit'
+
+const isLocalhost = () => {
+  const h = window.location.hostname
+  return h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.endsWith('.local')
+}
+
+const goToBooked = () => {
+  localStorage.setItem('izzu_booked_at', String(Date.now()))
+  router.push({ name: 'session-booked' })
+}
+
+// ── PerformanceObserver — solo en producción ─────────────────────
+let perfObserver: PerformanceObserver | null = null
+
+if (!isLocalhost()) {
+  try {
+    perfObserver = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.name.includes(GHL_ENDPOINT)) {
+          goToBooked()
+          return
+        }
+      }
+    })
+    perfObserver.observe({ type: 'resource', buffered: true })
+  } catch { /* ignore */ }
+}
+
+// ── postMessage — solo en producción ─────────────────────────────
+if (!isLocalhost()) {
+  window.addEventListener('message', (e: MessageEvent) => {
+    try {
+      const d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
+      const str = JSON.stringify(d).toLowerCase()
+      if (str.includes('booking_confirmed') || str.includes('confirmed') || str.includes('success') || str.includes('event/submit')) {
+        goToBooked()
+      }
+    } catch { /* ignore */ }
+  })
+}
+
+// ── Poll — solo en producción ───────────────────────────────────
+let pollId: ReturnType<typeof setInterval> | null = null
+
+if (!isLocalhost()) {
+  const checkPerf = () => {
+    try {
+      const entries = performance.getEntriesByType('resource')
+      for (const entry of entries) {
+        if (entry.name.includes(GHL_ENDPOINT)) {
+          const r = entry as PerformanceResourceTiming
+          if (!r.responseStatus || r.responseStatus === 201) return true
+        }
+      }
+    } catch { /* ignore */ }
+    return false
+  }
+
+  pollId = setInterval(() => {
+    if (localStorage.getItem('izzu_booked_at') || checkPerf()) {
+      goToBooked()
+    }
+  }, 1500)
+}
 
 onMounted(() => {
-  // Guard: solo accesible si calificó
   if (localStorage.getItem('izzu_qualified') !== '1') {
     router.replace({ name: 'registration' })
     return
@@ -21,6 +85,11 @@ onMounted(() => {
       if (data?.nombre) contactName.value = data.nombre.split(' ')[0]
     }
   } catch { /* ignore */ }
+})
+
+onBeforeUnmount(() => {
+  if (perfObserver) perfObserver.disconnect()
+  if (pollId) clearInterval(pollId)
 })
 </script>
 
@@ -67,13 +136,16 @@ onMounted(() => {
 
     <section class="izbook__after">
       <div class="izbook__container">
-        <p>
-          ¿Ya reservaste? Recibirás un correo con los detalles.
-          <RouterLink to="/gracias" class="izbook__link">
-            Confirmar y continuar
-            <i class="fa-solid fa-arrow-right" />
-          </RouterLink>
-        </p>
+        <div class="izbook__after-card">
+          <p class="izbook__after-text">
+            <i class="fa-solid fa-arrow-pointer" />
+            ¿Ya reservaste? Haz clic aquí para confirmar
+          </p>
+          <button type="button" class="izbook__after-btn izbook__after-btn--shown" @click="goToBooked">
+            <i class="fa-solid fa-circle-check" />
+            Ya reservé, continuar
+          </button>
+        </div>
       </div>
     </section>
 
@@ -152,19 +224,40 @@ $dark:    #0D1117;
 }
 
 .izbook__iframe {
-  width: 100%; min-height: 720px; height: 80vh; max-height: 900px;
+  width: 100%; min-height: 960px; height: 100vh; max-height: 1160px;
   border: 0; display: block; background: #ffffff;
 }
 
 .izbook__after {
-  padding: 1rem 0 2.5rem; text-align: center; color: #4b5563;
-  p { margin: 0; font-size: 0.95rem; }
+  padding: 1rem 0 3.5rem; text-align: center; color: #4b5563;
 }
-.izbook__link {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  margin-left: 0.5rem;
-  color: $primary; font-weight: 700; text-decoration: none;
-  &:hover { color: $accent; text-decoration: underline; }
+.izbook__after-card {
+  max-width: 460px; margin: 0 auto;
+  background: #ffffff; border: 2px solid rgba(27, 54, 93, 0.1);
+  border-radius: 1.25rem; padding: 2rem 1.5rem;
+  box-shadow: 0 16px 40px rgba(13, 17, 23, 0.06);
+  display: flex; flex-direction: column; align-items: center; gap: 1.15rem;
+}
+.izbook__after-text {
+  margin: 0; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; color: #4b5563;
+  i { color: $accent; font-size: 1rem; }
+}
+.izbook__after-btn {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  background: $primary; color: #ffffff;
+  border: 0; padding: 0.85rem 1.5rem; border-radius: 999px;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 800; font-size: 0.95rem; cursor: pointer;
+  letter-spacing: 0.03em;
+  box-shadow: 0 12px 28px rgba(27, 54, 93, 0.3);
+  transition: transform 140ms ease, background 160ms ease, color 160ms ease, box-shadow 200ms ease;
+  i { color: $accent; font-size: 1rem; transition: color 160ms ease; }
+  &:hover {
+    transform: translateY(-2px);
+    background: $accent; color: $dark;
+    box-shadow: 0 16px 40px rgba(196, 149, 106, 0.45);
+    i { color: $dark; }
+  }
 }
 
 .izbook__foot {

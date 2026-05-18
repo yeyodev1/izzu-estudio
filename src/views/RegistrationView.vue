@@ -4,10 +4,13 @@ import { useRouter } from 'vue-router'
 import { parsePhoneNumberFromString, getCountries, getCountryCallingCode, AsYouType } from 'libphonenumber-js'
 import IzzuHeader from '@/components/IzzuHeader.vue'
 import UrgencyBar from '@/components/UrgencyBar.vue'
+import RegistrationModal from '@/components/RegistrationModal.vue'
 import { captureFbParams, getStoredFbParams } from '@/utils/fbclid'
 import { trackPageView, trackLead } from '@/utils/tracking'
 
 const router = useRouter()
+
+const modalOpen = ref(false)
 
 // ── Country picker setup ────────────────────────────────────────
 interface Country { code: string; name: string; dial: string; flag: string }
@@ -162,9 +165,7 @@ const handleSubmit = async () => {
   router.push({ name: 'video' })
 }
 
-const scrollToForm = () => {
-  document.getElementById('izzu-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-}
+const openModal = () => { modalOpen.value = true }
 
 onMounted(() => {
   captureFbParams()
@@ -229,8 +230,8 @@ const faq = [
 </script>
 
 <template>
-  <UrgencyBar @cta="scrollToForm" />
-  <IzzuHeader variant="light" cta-label="Diagnóstico gratuito" @cta="scrollToForm" />
+  <UrgencyBar @cta="openModal" />
+  <IzzuHeader variant="light" cta-label="Diagnóstico gratuito" @cta="openModal" />
 
   <main class="izlp">
 
@@ -264,7 +265,7 @@ const faq = [
           </ul>
 
           <div class="izlp-hero__cta-row">
-            <button type="button" class="izlp-btn izlp-btn--primary" @click="scrollToForm">
+            <button type="button" class="izlp-btn izlp-btn--primary" @click="openModal">
               <i class="fa-solid fa-calendar-check" />
               Agendar mi diagnóstico
               <i class="fa-solid fa-arrow-right izlp-btn__arrow" />
@@ -282,92 +283,24 @@ const faq = [
           </div>
         </div>
 
-        <!-- Illustration card -->
-        <figure class="izlp-hero__visual" aria-hidden="true">
-          <svg viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice" class="izlp-hero__svg">
-            <defs>
-              <linearGradient id="lp-sky" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color="#fbeacb" />
-                <stop offset="55%" stop-color="#f0c98a" />
-                <stop offset="100%" stop-color="#c2895c" />
-              </linearGradient>
-              <linearGradient id="lp-b1" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color="#3d2817" />
-                <stop offset="100%" stop-color="#241409" />
-              </linearGradient>
-              <linearGradient id="lp-b2" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color="#7a5538" />
-                <stop offset="100%" stop-color="#42291a" />
-              </linearGradient>
-              <linearGradient id="lp-b3" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color="#a07349" />
-                <stop offset="100%" stop-color="#5a3d24" />
-              </linearGradient>
-              <linearGradient id="lp-win" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color="#ffe4a3" stop-opacity="0.95" />
-                <stop offset="100%" stop-color="#f0a850" stop-opacity="0.55" />
-              </linearGradient>
-            </defs>
-
-            <rect width="600" height="700" fill="url(#lp-sky)" />
-            <ellipse cx="300" cy="380" rx="500" ry="120" fill="#fbeacb" opacity="0.5" />
-
-            <!-- Back row buildings -->
-            <rect x="20" y="180" width="80" height="280" fill="url(#lp-b3)" />
-            <rect x="105" y="220" width="60" height="240" fill="url(#lp-b3)" opacity="0.85" />
-            <rect x="180" y="160" width="90" height="300" fill="url(#lp-b2)" />
-            <rect x="290" y="200" width="70" height="260" fill="url(#lp-b3)" />
-            <rect x="380" y="170" width="80" height="290" fill="url(#lp-b2)" />
-            <rect x="475" y="210" width="100" height="250" fill="url(#lp-b3)" opacity="0.9" />
-
-            <g fill="url(#lp-win)" opacity="0.85">
-              <rect x="30" y="200" width="10" height="14" /><rect x="50" y="200" width="10" height="14" /><rect x="70" y="200" width="10" height="14" />
-              <rect x="30" y="230" width="10" height="14" /><rect x="50" y="230" width="10" height="14" /><rect x="70" y="230" width="10" height="14" />
-              <rect x="30" y="260" width="10" height="14" /><rect x="50" y="260" width="10" height="14" /><rect x="70" y="260" width="10" height="14" />
-              <rect x="195" y="180" width="12" height="16" /><rect x="215" y="180" width="12" height="16" /><rect x="235" y="180" width="12" height="16" />
-              <rect x="195" y="210" width="12" height="16" /><rect x="215" y="210" width="12" height="16" /><rect x="235" y="210" width="12" height="16" />
-              <rect x="195" y="240" width="12" height="16" /><rect x="215" y="240" width="12" height="16" /><rect x="235" y="240" width="12" height="16" />
-              <rect x="395" y="190" width="12" height="16" /><rect x="415" y="190" width="12" height="16" /><rect x="435" y="190" width="12" height="16" />
-              <rect x="395" y="220" width="12" height="16" /><rect x="415" y="220" width="12" height="16" /><rect x="435" y="220" width="12" height="16" />
-              <rect x="395" y="250" width="12" height="16" /><rect x="415" y="250" width="12" height="16" /><rect x="435" y="250" width="12" height="16" />
-            </g>
-
-            <!-- Front large block -->
-            <rect x="60" y="320" width="240" height="380" fill="url(#lp-b1)" />
-            <polygon points="60,320 60,300 200,300 200,310 300,310 300,320" fill="#1a0c05" />
-            <g fill="url(#lp-win)">
-              <rect x="80" y="340" width="22" height="28" /><rect x="115" y="340" width="22" height="28" /><rect x="150" y="340" width="22" height="28" /><rect x="185" y="340" width="22" height="28" /><rect x="220" y="340" width="22" height="28" /><rect x="255" y="340" width="22" height="28" />
-              <rect x="80" y="385" width="22" height="28" /><rect x="115" y="385" width="22" height="28" /><rect x="150" y="385" width="22" height="28" /><rect x="185" y="385" width="22" height="28" /><rect x="220" y="385" width="22" height="28" opacity="0.55" /><rect x="255" y="385" width="22" height="28" />
-              <rect x="80" y="430" width="22" height="28" /><rect x="115" y="430" width="22" height="28" opacity="0.45" /><rect x="150" y="430" width="22" height="28" /><rect x="185" y="430" width="22" height="28" /><rect x="220" y="430" width="22" height="28" /><rect x="255" y="430" width="22" height="28" />
-              <rect x="80" y="475" width="22" height="28" /><rect x="115" y="475" width="22" height="28" /><rect x="150" y="475" width="22" height="28" /><rect x="185" y="475" width="22" height="28" opacity="0.6" /><rect x="220" y="475" width="22" height="28" /><rect x="255" y="475" width="22" height="28" />
-              <rect x="80" y="520" width="22" height="28" /><rect x="115" y="520" width="22" height="28" /><rect x="150" y="520" width="22" height="28" /><rect x="185" y="520" width="22" height="28" /><rect x="220" y="520" width="22" height="28" /><rect x="255" y="520" width="22" height="28" />
-              <rect x="80" y="565" width="22" height="28" /><rect x="115" y="565" width="22" height="28" /><rect x="150" y="565" width="22" height="28" opacity="0.5" /><rect x="185" y="565" width="22" height="28" /><rect x="220" y="565" width="22" height="28" /><rect x="255" y="565" width="22" height="28" />
-              <rect x="80" y="610" width="22" height="28" /><rect x="115" y="610" width="22" height="28" /><rect x="150" y="610" width="22" height="28" /><rect x="185" y="610" width="22" height="28" /><rect x="220" y="610" width="22" height="28" /><rect x="255" y="610" width="22" height="28" />
-            </g>
-
-            <rect x="310" y="380" width="190" height="320" fill="url(#lp-b2)" />
-            <polygon points="310,380 310,370 500,370 500,380" fill="#28170c" />
-            <g fill="url(#lp-win)">
-              <rect x="325" y="400" width="18" height="22" /><rect x="355" y="400" width="18" height="22" /><rect x="385" y="400" width="18" height="22" /><rect x="415" y="400" width="18" height="22" /><rect x="445" y="400" width="18" height="22" /><rect x="475" y="400" width="18" height="22" />
-              <rect x="325" y="435" width="18" height="22" /><rect x="355" y="435" width="18" height="22" /><rect x="385" y="435" width="18" height="22" opacity="0.45" /><rect x="415" y="435" width="18" height="22" /><rect x="445" y="435" width="18" height="22" /><rect x="475" y="435" width="18" height="22" />
-              <rect x="325" y="470" width="18" height="22" /><rect x="355" y="470" width="18" height="22" /><rect x="385" y="470" width="18" height="22" /><rect x="415" y="470" width="18" height="22" /><rect x="445" y="470" width="18" height="22" opacity="0.55" /><rect x="475" y="470" width="18" height="22" />
-              <rect x="325" y="505" width="18" height="22" /><rect x="355" y="505" width="18" height="22" /><rect x="385" y="505" width="18" height="22" /><rect x="415" y="505" width="18" height="22" /><rect x="445" y="505" width="18" height="22" /><rect x="475" y="505" width="18" height="22" />
-              <rect x="325" y="540" width="18" height="22" /><rect x="355" y="540" width="18" height="22" /><rect x="385" y="540" width="18" height="22" /><rect x="415" y="540" width="18" height="22" /><rect x="445" y="540" width="18" height="22" /><rect x="475" y="540" width="18" height="22" />
-              <rect x="325" y="575" width="18" height="22" /><rect x="355" y="575" width="18" height="22" /><rect x="385" y="575" width="18" height="22" /><rect x="415" y="575" width="18" height="22" /><rect x="445" y="575" width="18" height="22" /><rect x="475" y="575" width="18" height="22" />
-            </g>
-
-            <g><circle cx="40" cy="660" r="34" fill="#3a5a2a" /><circle cx="80" cy="655" r="28" fill="#4a6e34" /><rect x="38" y="655" width="6" height="40" fill="#2a1a0d" /></g>
-            <g><circle cx="540" cy="660" r="30" fill="#3a5a2a" /><circle cx="575" cy="668" r="25" fill="#4a6e34" /><rect x="538" y="660" width="6" height="35" fill="#2a1a0d" /></g>
-            <rect x="0" y="690" width="600" height="10" fill="#1a0c05" />
-          </svg>
-
+        <!-- Clickeable thumbnail video — opens registration modal -->
+        <figure class="izlp-hero__player" role="button" tabindex="0" @click="modalOpen = true" @keydown.enter="modalOpen = true" @keydown.space.prevent="modalOpen = true" aria-label="Haz clic para ver el video y comenzar tu diagnóstico">
+          <img src="/izzu-thumbnail.png" alt="IZZU Estudio de Arquitectura — Diagnóstico gratuito" class="izlp-hero__player-img" />
+          <div class="izlp-hero__player-overlay">
+            <span class="izlp-hero__player-play"><i class="fa-solid fa-circle-play" /></span>
+            <span class="izlp-hero__player-label">Ver video ahora</span>
+          </div>
+          <span class="izlp-hero__player-duration">
+            <i class="fa-solid fa-clock" />
+            2 min
+          </span>
           <figcaption class="izlp-hero__caption">
             <span class="izlp-hero__cap-eyebrow">
               <i class="fa-solid fa-location-dot" />
               Quito · Guayaquil · Cuenca
             </span>
-            <strong>Regularización con escritura individual</strong>
-            <em>Catastro municipal alineado a la realidad construida</em>
+            <strong>Diagnóstico técnico-legal gratuito</strong>
+            <em>Blinda tu patrimonio · 20 minutos · Sin compromiso</em>
           </figcaption>
         </figure>
 
@@ -572,6 +505,26 @@ const faq = [
       </div>
     </section>
 
+    <!-- ── VER VIDEO ────────────────────────────────────────────── -->
+    <section class="izlp-video">
+      <div class="izlp-container">
+        <span class="izlp-eyebrow">Mira el video</span>
+        <h2>Ve el video ahora y descubre cómo blindar tu patrimonio</h2>
+        <p class="izlp-video__lead">En menos de 2 minutos te explicamos la metodología IZZU para regularizar, dividir o blindar tu propiedad.</p>
+        <figure class="izlp-video__player" role="button" tabindex="0" @click="modalOpen = true" @keydown.enter="modalOpen = true" @keydown.space.prevent="modalOpen = true" aria-label="Haz clic para ver el video y comenzar tu diagnóstico">
+          <img src="/izzu-thumbnail.png" alt="Video IZZU Estudio — Diagnóstico gratuito" class="izlp-video__thumb" />
+          <div class="izlp-video__overlay">
+            <span class="izlp-video__play"><i class="fa-solid fa-circle-play" /></span>
+            <span class="izlp-video__label">Ver video ahora</span>
+          </div>
+          <span class="izlp-video__duration">
+            <i class="fa-solid fa-clock" />
+            2 min
+          </span>
+        </figure>
+      </div>
+    </section>
+
     <!-- ── ABOUT ───────────────────────────────────────────────── -->
     <section class="izlp-about">
       <div class="izlp-container izlp-about__grid">
@@ -618,7 +571,7 @@ const faq = [
         <span class="izlp-final__badge"><i class="fa-solid fa-bolt" /> Cupos limitados esta semana</span>
         <h2>Tu patrimonio no puede esperar</h2>
         <p>Agenda tu diagnóstico gratuito de 20 minutos y descubre cómo blindar tu propiedad.</p>
-        <button type="button" class="izlp-btn izlp-btn--primary" @click="scrollToForm">
+        <button type="button" class="izlp-btn izlp-btn--primary" @click="openModal">
           <i class="fa-solid fa-calendar-check" />
           Agendar mi diagnóstico
           <i class="fa-solid fa-arrow-right" />
@@ -641,6 +594,8 @@ const faq = [
     </footer>
 
   </main>
+
+  <RegistrationModal :open="modalOpen" @close="modalOpen = false" />
 </template>
 
 <style lang="scss" scoped>
@@ -788,15 +743,63 @@ $muted:   #6b7280;
   span { font-size: 0.74rem; color: $muted; line-height: 1.3; }
 }
 
-.izlp-hero__visual {
-  margin: 0; border-radius: 1.5rem; overflow: hidden;
-  box-shadow: 0 30px 70px rgba(13, 17, 23, 0.18);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  background: #fbeacb;
-  aspect-ratio: 4 / 5; max-width: 480px; justify-self: center;
-  position: relative;
+.izlp-hero__player {
+  margin: 0; position: relative;
+  border-radius: 1.25rem; overflow: hidden;
+  cursor: pointer; aspect-ratio: 16 / 9; max-width: 540px;
+  justify-self: center; width: 100%;
+  box-shadow: 0 30px 70px rgba(13, 17, 23, 0.2);
+  border: 2px solid rgba(196, 149, 106, 0.3);
+  transition: transform 280ms ease, box-shadow 280ms ease, border-color 280ms ease;
+
+  &:hover {
+    transform: scale(1.015);
+    box-shadow: 0 40px 90px rgba(13, 17, 23, 0.3);
+    border-color: $accent;
+  }
 }
-.izlp-hero__svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.izlp-hero__player-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.izlp-hero__player-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
+  background: rgba(13, 17, 23, 0.4);
+  transition: background 280ms ease;
+  .izlp-hero__player:hover & { background: rgba(13, 17, 23, 0.25); }
+}
+.izlp-hero__player-play {
+  width: 5rem; height: 5rem; border-radius: 50%;
+  background: rgba(196, 149, 106, 0.9);
+  color: #0D1117;
+  display: grid; place-items: center;
+  font-size: 2.2rem;
+  box-shadow: 0 8px 30px rgba(196, 149, 106, 0.5);
+  transition: transform 280ms ease, background 280ms ease;
+  .izlp-hero__player:hover & {
+    transform: scale(1.1);
+    background: $accent;
+  }
+}
+.izlp-hero__player-label {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700; font-size: 1.1rem; color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  letter-spacing: 0.04em;
+}
+.izlp-hero__player-duration {
+  position: absolute; top: 1rem; right: 1rem;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: rgba(13, 17, 23, 0.75);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700; font-size: 0.78rem;
+  padding: 0.4rem 0.8rem; border-radius: 999px;
+  border: 1px solid rgba(196, 149, 106, 0.3);
+  i { color: $accent; font-size: 0.7rem; }
+}
 .izlp-hero__caption {
   position: absolute; left: 1rem; right: 1rem; bottom: 1rem;
   background: rgba(13, 17, 23, 0.85);
@@ -1174,6 +1177,81 @@ $muted:   #6b7280;
     margin: 0; color: #c8d2dd; line-height: 1.55; font-size: 0.95rem;
     strong { color: #ffffff; font-weight: 700; }
   }
+}
+
+// ═════════════════════════════════════════════════════════════════
+// VER VIDEO
+// ═════════════════════════════════════════════════════════════════
+.izlp-video {
+  padding: 4.5rem 0; background: $light; text-align: center;
+  border-top: 1px solid rgba(0,0,0,0.04);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+
+  h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 800; font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+    margin: 0.6rem 0 0.5rem; color: $primary; line-height: 1.18;
+  }
+}
+.izlp-video__lead {
+  max-width: 620px; margin: 0 auto 2rem; color: $muted;
+  font-size: 1rem; line-height: 1.6;
+}
+.izlp-video__player {
+  position: relative; margin: 0 auto; max-width: 720px;
+  border-radius: 1.25rem; overflow: hidden;
+  cursor: pointer; aspect-ratio: 16 / 9;
+  box-shadow: 0 30px 70px rgba(13, 17, 23, 0.2);
+  border: 2px solid rgba(196, 149, 106, 0.3);
+  transition: transform 280ms ease, box-shadow 280ms ease, border-color 280ms ease;
+
+  &:hover {
+    transform: scale(1.015);
+    box-shadow: 0 40px 90px rgba(13, 17, 23, 0.3);
+    border-color: $accent;
+  }
+}
+.izlp-video__thumb {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.izlp-video__overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
+  background: rgba(13, 17, 23, 0.4);
+  transition: background 280ms ease;
+  .izlp-video__player:hover & { background: rgba(13, 17, 23, 0.25); }
+}
+.izlp-video__play {
+  width: 5rem; height: 5rem; border-radius: 50%;
+  background: rgba(196, 149, 106, 0.9);
+  color: #0D1117;
+  display: grid; place-items: center;
+  font-size: 2.2rem;
+  box-shadow: 0 8px 30px rgba(196, 149, 106, 0.5);
+  transition: transform 280ms ease, background 280ms ease;
+  .izlp-video__player:hover & {
+    transform: scale(1.1);
+    background: $accent;
+  }
+}
+.izlp-video__label {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700; font-size: 1.1rem; color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  letter-spacing: 0.04em;
+}
+.izlp-video__duration {
+  position: absolute; top: 1rem; right: 1rem;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: rgba(13, 17, 23, 0.75);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700; font-size: 0.78rem;
+  padding: 0.4rem 0.8rem; border-radius: 999px;
+  border: 1px solid rgba(196, 149, 106, 0.3);
+  i { color: $accent; font-size: 0.7rem; }
 }
 
 // ═════════════════════════════════════════════════════════════════

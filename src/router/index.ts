@@ -5,6 +5,7 @@ import VideoView from '@/views/VideoView.vue'
 import BookingView from '@/views/BookingView.vue'
 import ThanksView from '@/views/ThanksView.vue'
 import NoSpaceView from '@/views/NoSpaceView.vue'
+import SessionBookedView from '@/views/SessionBookedView.vue'
 import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import LegalNoticeView from '@/views/LegalNoticeView.vue'
 
@@ -64,6 +65,17 @@ const router = createRouter({
       } satisfies RouteMeta,
     },
     {
+      path: '/agendada',
+      name: 'session-booked',
+      component: SessionBookedView,
+      meta: {
+        title: 'Cita agendada | IZZU Estudio',
+        description: 'Tu sesión de diagnóstico técnico-legal ha sido agendada. Revisa tu correo con los detalles.',
+        canonical: `${SITE}/agendada`,
+        ogUrl: `${SITE}/agendada`,
+      } satisfies RouteMeta,
+    },
+    {
       path: '/gracias',
       name: 'thanks',
       component: ThanksView,
@@ -109,8 +121,7 @@ const router = createRouter({
     },
     // Compatibilidad con rutas viejas
     { path: '/ver-video', redirect: '/video' },
-    { path: '/agendada', redirect: '/gracias' },
-    { path: '/cita-confirmada', redirect: '/gracias' },
+    { path: '/cita-confirmada', redirect: '/agendada' },
     { path: '/sin-espacio', redirect: '/sin-cupo' },
     { path: '/registro-vsl-tr', redirect: '/' },
     { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -153,8 +164,13 @@ const isLocalhost = () => {
   return h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.endsWith('.local')
 }
 
-const REQUIRES_CONTACT = new Set(['video', 'booking', 'thanks'])
+const REQUIRES_CONTACT = new Set(['video', 'booking', 'thanks', 'session-booked'])
 const REQUIRES_QUALIFIED = new Set(['booking'])
+
+const hasActiveBooking = (): boolean => {
+  const bookedAt = Number(localStorage.getItem('izzu_booked_at') ?? '0')
+  return !!bookedAt && Date.now() - bookedAt < COOLDOWN_MS
+}
 
 router.beforeEach((to, _from, next) => {
   if (isLocalhost()) return next()
@@ -163,9 +179,14 @@ router.beforeEach((to, _from, next) => {
   const isQualified = localStorage.getItem('izzu_qualified') === '1'
   const disqAt = Number(localStorage.getItem('izzu_disq_at') ?? '0')
   const isDisqualified = !!disqAt && Date.now() - disqAt < COOLDOWN_MS
+  const booked = hasActiveBooking()
   const routeName = to.name as string | undefined
 
   if (!routeName) return next({ name: 'registration' })
+
+  if (booked && routeName !== 'session-booked') {
+    return next({ name: 'session-booked' })
+  }
 
   if (REQUIRES_CONTACT.has(routeName) && !hasContact) {
     return next({ name: 'registration' })

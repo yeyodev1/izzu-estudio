@@ -3,18 +3,19 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import IzzuHeader from '@/components/IzzuHeader.vue'
 import UrgencyBar from '@/components/UrgencyBar.vue'
-import { trackCompleteRegistration, trackViewContent } from '@/utils/tracking'
+import QualifyModal from '@/components/QualifyModal.vue'
 
 const router = useRouter()
+const qualifyModalOpen = ref(false)
 
-const LOCK_MS = 2 * 60 * 1000
+const isLocalhost = () => {
+  const h = window.location.hostname
+  return h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.endsWith('.local')
+}
+const LOCK_MS = isLocalhost() ? 3 * 1000 : 2 * 60 * 1000
 const STORAGE_KEY = 'izzu_video_start'
 
-interface StoredLead {
-  nombre: string; apellido: string; email: string; phone: string; country: string; eventId?: string
-}
-
-const lead = ref<StoredLead | null>(null)
+const lead = ref<{ nombre: string; apellido: string; email: string; phone: string; country: string; eventId?: string } | null>(null)
 const now = ref(Date.now())
 const startedAt = ref<number>(0)
 let timerId: ReturnType<typeof setInterval> | null = null
@@ -31,128 +32,9 @@ const mmss = computed(() => {
   return `${m}:${String(s).padStart(2, '0')}`
 })
 
-// ── Qualification form ──────────────────────────────────────────
-type Situacion = 'ya-construi' | 'dividir-terreno' | 'propiedad-horizontal' | 'desarrollador-urbano' | 'herencia'
-type Inmueble = 'terreno-baldio' | 'casa' | 'edificio' | 'local' | 'terreno-rural'
-type Valor = '-50k' | '50k-200k' | '+200k'
-
-const situacion = ref<Situacion | ''>('')
-const inmueble = ref<Inmueble | ''>('')
-const valor = ref<Valor | ''>('')
-const submitting = ref(false)
-const showForm = ref(false)
-
-const isValid = computed(() => situacion.value !== '' && inmueble.value !== '' && valor.value !== '')
-
-const SITUACION_LABEL: Record<string, string> = {
-  'ya-construi': '🏚️ Ya construyó sin permisos — necesita regularizar edificación',
-  'dividir-terreno': '🗺️ Quiere dividir terreno en lotes',
-  'propiedad-horizontal': '🏢 Necesita dividir edificio en departamentos/oficinas (Propiedad Horizontal)',
-  'desarrollador-urbano': '🏗️ Desarrollador — proyecto urbanístico / entrega-recepción',
-  'herencia': '👨‍👩‍👧 Herencia familiar — división legal entre herederos',
-}
-const INMUEBLE_LABEL: Record<string, string> = {
-  'terreno-baldio': '🟫 Terreno baldío / macrolote',
-  'casa': '🏠 Casa unifamiliar',
-  'edificio': '🏢 Edificio de departamentos / oficinas',
-  'local': '🏪 Local comercial / uso mixto',
-  'terreno-rural': '🌳 Terreno rural / finca',
-}
-const VALOR_LABEL: Record<string, string> = {
-  '-50k': '💵 Menos de $50,000',
-  '50k-200k': '💵 $50,000 — $200,000',
-  '+200k': '💎 Más de $200,000',
-}
-
-const calculaCalifica = (v: Valor | ''): boolean => v === '50k-200k' || v === '+200k'
-
-const unlockAndShowForm = () => {
+const openQualify = () => {
   if (!unlocked.value) return
-  showForm.value = true
-  trackViewContent({ custom: { content_name: 'IZZU - Calificación abierta', content_category: 'calificacion' } })
-}
-
-const submit = async () => {
-  if (!isValid.value || submitting.value || !lead.value) return
-  submitting.value = true
-
-  const califica = calculaCalifica(valor.value as Valor)
-  const nombreFull = `${lead.value.nombre} ${lead.value.apellido}`.trim()
-  const eventId = `${lead.value.eventId ?? 'lead'}_qual_${Date.now()}`
-
-  const tags = [
-    'paso-3-calificacion', 'izzu-diagnostico',
-    califica ? 'lead-calificado' : 'lead-descalificado',
-    `califica-${califica}`,
-    `situacion-${situacion.value}`, `inmueble-${inmueble.value}`, `valor-${valor.value}`,
-    `pais-${lead.value.country.toLowerCase()}`,
-  ]
-
-  const titulo = califica
-    ? '✅ *Lead CALIFICADO — listo para agendar diagnóstico*'
-    : '⛔ *Lead NO CALIFICA — descartado por valor del inmueble*'
-  const accion = califica
-    ? '🚀 *Acción:* Lead va al calendario GHL para reservar día/hora.'
-    : '🛑 *Acción:* No contactar. Caso fuera de alcance económico.'
-
-  const nota = [
-    titulo, '',
-    '📍 *Paso 3 / 3* — Calificación completa',
-    califica ? '🎯 *Estado:* Lead aprobado' : '🚫 *Estado:* Lead descalificado · Cooldown 24h',
-    `🏷️ *califica:* ${califica ? 'true ✅' : 'false ❌'}`, '',
-    `👤 *Nombre:* ${nombreFull}`,
-    `✉️ *Email:* ${lead.value.email}`,
-    `📱 *WhatsApp:* ${lead.value.phone}`,
-    `🌎 *País:* ${lead.value.country}`, '',
-    '📋 *Respuestas de calificación:*',
-    `  • *Situación:* ${SITUACION_LABEL[situacion.value]}`,
-    `  • *Inmueble:* ${INMUEBLE_LABEL[inmueble.value]}`,
-    `  • *Valor estimado:* ${VALOR_LABEL[valor.value]}`, '',
-    '🎬 Vio video VSL (2 min mínimo) · ✏️ Respondió 3 preguntas',
-    `🆔 *Event ID:* ${eventId}`,
-    `🕒 *Timestamp:* ${new Date().toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}`,
-    '', accion,
-  ].join('\n')
-
-  try {
-    await fetch(import.meta.env.VITE_WEBHOOK_CALIFICACION, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...lead.value, nombreCompleto: nombreFull,
-        situacion: situacion.value, situacionLabel: SITUACION_LABEL[situacion.value],
-        inmueble: inmueble.value, inmuebleLabel: INMUEBLE_LABEL[inmueble.value],
-        valor: valor.value, valorLabel: VALOR_LABEL[valor.value],
-        califica, calificaTexto: String(califica), califica_bool: califica, qualifies: califica,
-        timestamp: new Date().toISOString(),
-        source: 'izzu-estudio-web', step: 3, stepName: 'calificacion',
-        estado: califica ? 'lead-calificado' : 'lead-descalificado',
-        event_id: eventId, tags, etiquetas: tags.join(', '),
-        nota, notas: nota, note: nota,
-      }),
-    })
-  } catch { /* ignore */ }
-
-  trackCompleteRegistration({
-    eventId,
-    user: {
-      email: lead.value.email, phone: lead.value.phone,
-      firstName: lead.value.nombre, lastName: lead.value.apellido,
-      country: lead.value.country, externalId: lead.value.email,
-    },
-    custom: {
-      content_name: califica ? 'IZZU - Calificado' : 'IZZU - Descalificado',
-      content_category: califica ? 'diagnostico-calificado' : 'diagnostico-descalificado',
-      califica, situacion: situacion.value, inmueble: inmueble.value, valor: valor.value,
-    },
-  })
-
-  if (califica) {
-    localStorage.setItem('izzu_qualified', '1')
-    router.push({ name: 'booking' })
-  } else {
-    localStorage.setItem('izzu_disq_at', String(Date.now()))
-    router.push({ name: 'thanks' })
-  }
+  qualifyModalOpen.value = true
 }
 
 onMounted(() => {
@@ -172,14 +54,10 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => { if (timerId) clearInterval(timerId) })
-
-const scrollToQualify = () => {
-  document.getElementById('izzu-qualify')?.scrollIntoView({ behavior: 'smooth' })
-}
 </script>
 
 <template>
-  <UrgencyBar @cta="scrollToQualify" />
+  <UrgencyBar @cta="openQualify" />
   <IzzuHeader variant="dark" />
 
   <main class="izvid">
@@ -231,7 +109,7 @@ const scrollToQualify = () => {
           type="button"
           :disabled="!unlocked"
           :class="{ 'izvid__cta--locked': !unlocked }"
-          @click="unlockAndShowForm"
+          @click="openQualify"
         >
           <i v-if="!unlocked" class="fa-solid fa-hourglass-half" />
           <i v-else class="fa-solid fa-arrow-right" />
@@ -240,51 +118,7 @@ const scrollToQualify = () => {
       </div>
     </section>
 
-    <section v-if="showForm" id="izzu-qualify" class="izvid__qualify">
-      <div class="izvid__qualify-inner">
-        <span class="izvid__qualify-step">Paso 3 de 3 · Calificación</span>
-        <h2>Cuéntanos sobre tu propiedad</h2>
-        <p class="izvid__qualify-sub">3 preguntas rápidas para preparar tu diagnóstico personalizado.</p>
-
-        <form class="izvid__form" @submit.prevent="submit">
-
-          <fieldset class="izvid__field" :disabled="submitting">
-            <legend>1. ¿Cuál es tu situación actual?</legend>
-            <label class="izvid__option"><input v-model="situacion" type="radio" value="ya-construi" /><span><strong>Ya construí sin permisos</strong> y necesito regularizar mi edificación.</span></label>
-            <label class="izvid__option"><input v-model="situacion" type="radio" value="dividir-terreno" /><span><strong>Quiero dividir un terreno</strong> en lotes para vender o desarrollar.</span></label>
-            <label class="izvid__option"><input v-model="situacion" type="radio" value="propiedad-horizontal" /><span><strong>Necesito dividir un edificio</strong> en departamentos u oficinas.</span></label>
-            <label class="izvid__option"><input v-model="situacion" type="radio" value="desarrollador-urbano" /><span><strong>Soy desarrollador</strong> y necesito aprobación urbanística o entrega-recepción.</span></label>
-            <label class="izvid__option"><input v-model="situacion" type="radio" value="herencia" /><span><strong>Es una herencia familiar</strong> que requiere división legal.</span></label>
-          </fieldset>
-
-          <fieldset class="izvid__field" :disabled="submitting">
-            <legend>2. ¿Qué tipo de inmueble tienes?</legend>
-            <label class="izvid__option"><input v-model="inmueble" type="radio" value="terreno-baldio" /><span><strong>Terreno baldío / macrolote</strong> sin construcción.</span></label>
-            <label class="izvid__option"><input v-model="inmueble" type="radio" value="casa" /><span><strong>Casa unifamiliar</strong> con o sin ampliaciones.</span></label>
-            <label class="izvid__option"><input v-model="inmueble" type="radio" value="edificio" /><span><strong>Edificio de departamentos / oficinas</strong> con múltiples unidades.</span></label>
-            <label class="izvid__option"><input v-model="inmueble" type="radio" value="local" /><span><strong>Local comercial</strong> o uso mixto.</span></label>
-            <label class="izvid__option"><input v-model="inmueble" type="radio" value="terreno-rural" /><span><strong>Terreno rural</strong> o finca.</span></label>
-          </fieldset>
-
-          <fieldset class="izvid__field" :disabled="submitting">
-            <legend>3. ¿Valor estimado de tu propiedad?</legend>
-            <div class="izvid__chips">
-              <label class="izvid__chip" :class="{ active: valor === '-50k' }"><input v-model="valor" type="radio" value="-50k" /><span>Menos de $50,000</span></label>
-              <label class="izvid__chip" :class="{ active: valor === '50k-200k' }"><input v-model="valor" type="radio" value="50k-200k" /><span>$50,000 — $200,000</span></label>
-              <label class="izvid__chip" :class="{ active: valor === '+200k' }"><input v-model="valor" type="radio" value="+200k" /><span>Más de $200,000</span></label>
-            </div>
-          </fieldset>
-
-          <button type="submit" class="izvid__submit" :disabled="!isValid || submitting">
-            <i v-if="submitting" class="fa-solid fa-spinner izvid__spin" />
-            <i v-else class="fa-solid fa-arrow-right" />
-            {{ submitting ? 'Enviando…' : 'CONFIRMAR Y AGENDAR' }}
-          </button>
-
-          <p class="izvid__legal">Sin compromiso. Si tu caso encaja con nuestros servicios, podrás reservar tu sesión de 20 minutos.</p>
-        </form>
-      </div>
-    </section>
+    <QualifyModal :open="qualifyModalOpen" @close="qualifyModalOpen = false" />
 
     <footer class="izvid__foot">
       <div class="izvid__foot-inner">
@@ -424,93 +258,6 @@ $dark:    #0D1117;
     border: 1px dashed rgba(255,255,255,0.18);
   }
 }
-
-// ── QUALIFY FORM ────────────────────────────────────────────────
-.izvid__qualify {
-  background: #ffffff; color: $dark;
-  padding: 3rem 1.25rem 4rem;
-  border-top: 1px solid rgba(196, 149, 106, 0.18);
-
-  @media (min-width: 768px) { padding: 4rem 2rem; }
-}
-.izvid__qualify-inner {
-  max-width: 720px; margin: 0 auto;
-  display: flex; flex-direction: column; gap: 1rem;
-}
-.izvid__qualify-step {
-  display: inline-block;
-  background: rgba(27, 54, 93, 0.08); color: $primary;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 700; font-size: 0.72rem; letter-spacing: 0.08em;
-  padding: 0.35rem 0.85rem; border-radius: 999px; text-transform: uppercase;
-  align-self: flex-start;
-}
-.izvid__qualify h2 {
-  font-family: 'Outfit', system-ui, sans-serif;
-  font-weight: 800; font-size: clamp(1.5rem, 3.5vw, 2rem);
-  color: $primary; margin: 0; line-height: 1.18;
-}
-.izvid__qualify-sub { color: #6b7280; margin: 0 0 0.75rem; font-size: 0.95rem; line-height: 1.55; }
-
-.izvid__form { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 0.5rem; }
-
-.izvid__field {
-  border: 0; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 0.65rem;
-
-  legend {
-    font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 1rem; font-weight: 700; color: $primary;
-    margin-bottom: 0.4rem; line-height: 1.35;
-  }
-}
-
-.izvid__option {
-  display: flex; gap: 0.85rem; align-items: flex-start;
-  padding: 0.95rem 1.05rem; border: 1.5px solid rgba(27, 54, 93, 0.1);
-  border-radius: 0.85rem; cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease;
-
-  input { margin-top: 0.2rem; accent-color: $accent; flex-shrink: 0; }
-
-  span {
-    font-size: 0.92rem; line-height: 1.5; color: #4b5563;
-    strong { display: block; color: $primary; margin-bottom: 0.1rem; }
-  }
-
-  &:hover { border-color: $accent; background: #f8f6f1; }
-  &:has(input:checked) { border-color: $accent; background: #f8f6f1; box-shadow: 0 4px 14px rgba(196, 149, 106, 0.18); }
-}
-
-.izvid__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.izvid__chip {
-  display: inline-flex; align-items: center;
-  padding: 0.7rem 1.15rem; border: 1.5px solid rgba(27, 54, 93, 0.1);
-  border-radius: 999px;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 700; font-size: 0.85rem; color: #4b5563; cursor: pointer;
-  transition: all 160ms ease;
-  input { position: absolute; opacity: 0; pointer-events: none; }
-  &:hover { border-color: $accent; color: $primary; }
-  &.active { border-color: $accent; background: #f8f6f1; color: $primary; box-shadow: 0 4px 14px rgba(196, 149, 106, 0.18); }
-}
-
-.izvid__submit {
-  width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
-  padding: 1.05rem 1.4rem; border-radius: 0.85rem; border: 0;
-  background: $accent; color: $dark;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 800; font-size: 0.95rem; letter-spacing: 0.06em; text-transform: uppercase;
-  cursor: pointer; box-shadow: 0 12px 30px rgba(196, 149, 106, 0.4);
-  transition: transform 140ms ease, background 160ms ease, box-shadow 200ms ease;
-
-  &:hover:not(:disabled) { transform: translateY(-2px); background: #fbbf24; box-shadow: 0 16px 40px rgba(251, 191, 36, 0.55); }
-  &:disabled { opacity: 0.55; cursor: not-allowed; }
-}
-.izvid__spin { animation: izvid-spin 0.8s linear infinite; }
-@keyframes izvid-spin { to { transform: rotate(360deg); } }
-
-.izvid__legal { font-size: 0.78rem; color: #9ca3af; text-align: center; margin: 0.5rem 0 0; line-height: 1.5; }
 
 // ── FOOTER ──────────────────────────────────────────────────────
 .izvid__foot {
