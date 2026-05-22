@@ -131,7 +131,7 @@ const handleSubmit = async () => {
     timestamp: new Date().toISOString(),
     event_id: leadEventId, step: 1, stepName: 'contacto',
     estado: 'lead-sin-calificar',
-    nota, notas: nota, note: nota,
+    nota, notas: nota, note: nota, notes: nota,
     tags, etiquetas: tags.join(', '),
     source: 'izzu-estudio-web',
     landingUrl: window.location.href, referrer: document.referrer, userAgent: navigator.userAgent,

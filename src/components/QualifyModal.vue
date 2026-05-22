@@ -100,7 +100,7 @@ const handleSubmit = async () => {
         source: 'izzu-estudio-web', step: 3, stepName: 'calificacion',
         estado: califica ? 'lead-calificado' : 'lead-descalificado',
         event_id: eventId, tags, etiquetas: tags.join(', '),
-        nota, notas: nota, note: nota,
+        nota, notas: nota, note: nota, notes: nota,
       }),
     })
   } catch { /* ignore */ }
